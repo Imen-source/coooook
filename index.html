@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Cook's — AI-Powered Smart Arabic & International Kitchen Platform" />
+  <title>Cook's — AI Kitchen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Cairo:wght@400;500;600;700;800&family=Amiri:ital,wght@0,400;0,700;1,400&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="style.css?v=3" />
+</head>
+
+<body class="light">
+
+  <!-- ═══════════════════════════════════════════════
+     AUTH OVERLAY
+════════════════════════════════════════════════ -->
+  <div class="auth-overlay" id="authOverlay">
+    <div class="auth-split">
+      <!-- Left Panel -->
+      <div class="auth-promo">
+        <div class="auth-logo">
+          <img src="image.png" alt="Cook's Logo" class="brand-logo-img" />
+          Cook's
+        </div>
+        <h2>Authentic Flavors.<br />Modern Intelligence.</h2>
+        <p>Discover Arabic heritage and world cuisine. Manage your fridge, plan meals, and cook step-by-step with AI
+          guidance.</p>
+        <div class="auth-features">
+          <div class="af-row"><i class="fa-solid fa-snowflake"></i> Smart 3D Fridge Management</div>
+          <div class="af-row"><i class="fa-solid fa-bowl-rice"></i> Arabic &amp; International Recipes</div>
+          <div class="af-row"><i class="fa-solid fa-calendar-check"></i> Weekly Meal Planner</div>
+          <div class="af-row"><i class="fa-solid fa-users"></i> Vibrant Cooking Community</div>
+        </div>
+      </div>
+      <!-- Right Panel: Forms -->
+      <div class="auth-form-panel">
+        <div class="auth-tabs">
+          <button class="atab active" id="tabSignin" onclick="switchAuthTab('signin')">Sign In</button>
+          <button class="atab" id="tabSignup" onclick="switchAuthTab('signup')">Sign Up</button>
+        </div>
+
+        <!-- Sign In -->
+        <form class="auth-form active" id="formSignin" onsubmit="handleSignin(event)" novalidate>
+          <div class="field-group">
+            <label>Email Address</label>
+            <div class="field-wrap"><i class="fa-solid fa-envelope"></i><input type="email" placeholder="chef@cooks.com"
+                required /></div>
+          </div>
+          <div class="field-group">
+            <label>Password</label>
+            <div class="field-wrap"><i class="fa-solid fa-lock"></i><input type="password" placeholder="••••••••"
+                required /></div>
+          </div>
+          <button type="submit" class="btn-primary full" id="signinBtn">Open My Kitchen</button>
+        </form>
+
+        <!-- Sign Up -->
+        <form class="auth-form" id="formSignup" onsubmit="handleSignup(event)" novalidate>
+          <div class="field-group">
+            <label>Username <span class="hint">(visible to community)</span></label>
+            <div class="field-wrap"><i class="fa-solid fa-user-chef"></i><input type="text" id="suName"
+                placeholder="ChefMalak" required /></div>
+          </div>
+          <div class="field-group">
+            <label>Email Address</label>
+            <div class="field-wrap"><i class="fa-solid fa-envelope"></i><input type="email" id="suEmail"
+                placeholder="malak@example.com" required /></div>
+          </div>
+          <div class="field-group">
+            <label>Password</label>
+            <div class="field-wrap"><i class="fa-solid fa-lock"></i><input type="password" id="suPass"
+                placeholder="••••••••" required /></div>
+          </div>
+          <div class="field-group">
+            <label>Confirm Password</label>
+            <div class="field-wrap"><i class="fa-solid fa-shield-check"></i><input type="password" id="suConfirm"
+                placeholder="••••••••" required /></div>
+          </div>
+          <div class="privacy-row">
+            <input type="checkbox" id="agreePrivacy" required />
+            <label for="agreePrivacy">I agree to the <span class="link-text">privacy policy</span> and <span
+                class="link-text">confidentiality terms</span>.</label>
+          </div>
+          <button type="submit" class="btn-primary full">Create My Account</button>
+        </form>
+
+        <div class="auth-divider"><span>or continue with</span></div>
+        <button class="google-btn" onclick="mockGoogleLogin()">
+          <svg width="20" height="20" viewBox="0 0 48 48">
+            <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.9 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.5 6.6 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11.1 0 20-8.9 20-20 0-1.3-.1-2.7-.4-3.9z" />
+            <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16.1 19 13 24 13c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.5 6.6 29.5 4 24 4 16.3 4 9.7 8.4 6.3 14.7z" />
+            <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.4 26.8 36 24 36c-5.2 0-9.7-3.1-11.3-7.5L6 33.8C9.3 39.7 16.2 44 24 44z" />
+            <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.9 2.3-2.4 4.3-4.4 5.6l6.2 5.2C37 39 44 34 44 24c0-1.3-.1-2.7-.4-3.9z" />
+          </svg>
+          Continue with Google
+        </button>
+        <button class="btn-text-gold full" style="margin-top:20px; font-weight:800;" onclick="browseAsGuest()">
+          Browse as Guest <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+     TOP NAVIGATION
+════════════════════════════════════════════════ -->
+  <nav class="topbar hidden" id="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-brand" onclick="navigateTo('home')">
+        <img src="image.png" alt="Cook's Logo" class="brand-logo-img nav-logo" />
+        <span>Cook's</span>
+      </div>
+      <ul class="topbar-nav">
+        <li><button class="tnav active" data-page="home"><i class="fa-solid fa-house-chimney"></i> <span
+              data-i18n="nav_home">Home</span></button></li>
+        <li><button class="tnav" data-page="fridge"><i class="fa-solid fa-snowflake"></i> <span
+              data-i18n="nav_fridge">Fridge</span></button></li>
+        <li><button class="tnav" data-page="recipes"><i class="fa-solid fa-bowl-rice"></i> <span
+              data-i18n="nav_recipes">Discover</span></button></li>
+        <li><button class="tnav" data-page="planner"><i class="fa-solid fa-calendar-days"></i> <span
+              data-i18n="nav_planner">Planner</span></button></li>
+        <li><button class="tnav" data-page="saved"><i class="fa-solid fa-bookmark"></i> <span
+              data-i18n="nav_saved">Saved</span></button></li>
+        <li><button class="tnav" data-page="community"><i class="fa-solid fa-users"></i> <span
+              data-i18n="nav_community">Community</span></button></li>
+      </ul>
+      <div class="topbar-actions">
+        <div class="lang-group">
+          <button class="lbtn active" data-lang="en">EN</button>
+          <button class="lbtn" data-lang="fr">FR</button>
+          <button class="lbtn" data-lang="ar">ع</button>
+        </div>
+        <button class="icon-btn" id="themeBtn" title="Toggle Theme"><i class="fa-solid fa-moon"></i></button>
+        <div class="user-pill" onclick="navigateTo('profile')">
+          <div class="up-avatar">👨‍🍳</div>
+          <span id="upName">Chef</span>
+          <i class="fa-solid fa-chevron-down" style="font-size:0.6rem;"></i>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════
+     PAGE: HOME
+════════════════════════════════════════════════ -->
+  <div class="page active" id="page-home">
+    <!-- Hero -->
+    <section class="home-hero">
+      <div class="hero-bg-pattern"></div>
+      <div class="container hero-inner">
+        <div class="hero-text">
+          <div class="hero-eyebrow">Your AI Culinary Companion</div>
+          <h1 data-i18n="hero_title">Where Tradition Meets <span class="gold-text">Smart Cooking</span></h1>
+          <p data-i18n="hero_sub">Arabic heritage, international flavors, and AI guidance — all in one beautiful kitchen.</p>
+          <div class="hero-cta">
+            <button class="btn-primary lg" onclick="navigateTo('recipes')"><i class="fa-solid fa-fire"></i> Discover Recipes</button>
+            <button class="btn-outline lg" onclick="navigateTo('fridge')"><i class="fa-solid fa-snowflake"></i> Open Fridge</button>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="hero-cards-stack">
+            <div class="hc-float s1">🥘 Kabsa</div>
+            <div class="hc-float s2">🫕 Tagine</div>
+            <div class="hc-float s3">🥗 Tabbouleh</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section class="categories-section">
+      <div class="container">
+        <div class="section-header">
+          <h2>Explore Categories</h2>
+        </div>
+        <div class="cat-grid">
+          <div class="cat-card arabic" onclick="filterByCategory('arabic')">
+            <div class="cat-overlay"></div>
+            <div class="cat-content">
+              <span class="cat-icon">🌙</span>
+              <h3>Arabic Heritage</h3>
+              <p>Traditional flavors</p>
+            </div>
+          </div>
+          <div class="cat-card levant" onclick="filterByCategory('levant')">
+            <div class="cat-overlay"></div>
+            <div class="cat-content">
+              <span class="cat-icon">🫒</span>
+              <h3>Levant</h3>
+              <p>Fresh & Zesty</p>
+            </div>
+          </div>
+          <div class="cat-card maghreb" onclick="filterByCategory('maghreb')">
+            <div class="cat-overlay"></div>
+            <div class="cat-content">
+              <span class="cat-icon">🏺</span>
+              <h3>Maghreb</h3>
+              <p>Spices & Tagines</p>
+            </div>
+          </div>
+          <div class="cat-card world" onclick="filterByCategory('world')">
+            <div class="cat-overlay"></div>
+            <div class="cat-content">
+              <span class="cat-icon">🌍</span>
+              <h3>International</h3>
+              <p>Global favorites</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Heritage Highlights Section -->
+    <section class="section-divider">
+      <div class="container">
+        <div class="section-header">
+          <h2>🏛️ Heritage Highlights</h2>
+          <button class="btn-text-gold" onclick="navigateTo('recipes')">Discover More →</button>
+        </div>
+        <div class="recipe-grid" id="heritageRecipeGrid"></div>
+      </div>
+    </section>
+
+    <!-- Dashboard Stats -->
+    <section class="dashboard-section">
+      <div class="container">
+        <div class="dash-grid">
+
+          <div class="dash-card clickable" onclick="navigateTo('fridge')">
+            <div class="dc-icon cyan"><i class="fa-solid fa-snowflake"></i></div>
+            <div class="dc-info">
+              <h3 data-i18n="dash_fridge">Smart Fridge</h3>
+              <p><span id="homeFridgeCount">0</span> items indexed</p>
+              <div class="dc-mini-emojis" id="homeEmojis">Add items →</div>
+            </div>
+          </div>
+
+          <div class="dash-card clickable" onclick="navigateTo('planner')">
+            <div class="dc-icon gold"><i class="fa-solid fa-calendar-day"></i></div>
+            <div class="dc-info">
+              <h3 data-i18n="dash_plan">Today's Plan</h3>
+              <div id="homeTodayPlan">Nothing planned yet</div>
+            </div>
+          </div>
+
+          <div class="dash-card">
+            <div class="dc-icon green"><i class="fa-solid fa-trophy"></i></div>
+            <div class="dc-info">
+              <h3 data-i18n="dash_challenge">Daily Challenge</h3>
+              <p>Perfect Hummus — submit a photo!</p>
+              <button class="btn-sm-gold" onclick="navigateTo('community')">Join Now</button>
+            </div>
+          </div>
+
+          <div class="dash-card clickable" onclick="navigateTo('saved')">
+            <div class="dc-icon red"><i class="fa-solid fa-bookmark"></i></div>
+            <div class="dc-info">
+              <h3 data-i18n="dash_saved">Saved Recipes</h3>
+              <p><span id="homesSavedCount">0</span> saved</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Trending Recipes -->
+    <section class="section-divider">
+      <div class="container">
+        <div class="section-header">
+          <h2 data-i18n="trending">🔥 Trending</h2>
+          <button class="btn-text-gold" onclick="navigateTo('recipes')">View All →</button>
+        </div>
+        <div class="recipe-grid" id="homeRecipeGrid"></div>
+      </div>
+    </section>
+
+    <!-- Cultural Quote -->
+    <section class="quote-section">
+      <div class="container">
+        <blockquote data-i18n="quote">"Food is the thread that ties generations together." — North African Proverb
+        </blockquote>
+      </div>
+    </section>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+     PAGE: FRIDGE
+════════════════════════════════════════════════ -->
+  <div class="page" id="page-fridge">
+    <div class="page-hero">
+      <div class="container">
+        <h1><i class="fa-solid fa-snowflake"></i> <span data-i18n="fridge_title">Smart Fridge</span></h1>
+        <p data-i18n="fridge_sub">Click the fridge to open the door and manage your ingredients.</p>
+      </div>
+    </div>
+    <div class="container">
+      <div class="fridge-layout">
+        <!-- 3D Fridge -->
+        <div class="fridge-3d-wrapper">
+          <div class="smart-fridge" id="smartFridge" onclick="toggleFridgeDoor()">
+            <div class="fridge-door" id="fridgeDoor">
+              <!-- Stickers -->
+              <div class="fridge-sticker s1">🥑</div>
+              <div class="fridge-sticker s2" id="fridgeChefSticker">Chef Malak</div>
+              <div class="fridge-sticker s3">🌶️</div>
+              <div class="fridge-sticker s4">I ❤️ Cooking</div>
+              <div class="fridge-sticker s5">🍕</div>
+              <div class="fridge-sticker s6">100% Arabic</div>
+              <div class="fridge-sticker s7">🌿</div>
+              <div class="fridge-sticker s8">🌟</div>
+              
+              <div class="door-inner">
+                <div class="door-screen">
+                  <div class="ds-temp">3°C</div>
+                  <div class="ds-missing-label">MISSING ITEMS</div>
+                  <div class="ds-missing-list" id="doorMissingList">Scanning...</div>
+                  <div class="ds-label">TAP TO OPEN</div>
+                </div>
+                <div class="door-handle"></div>
+                <div class="door-compartments">
+                  <div class="door-slot"></div>
+                  <div class="door-slot"></div>
+                </div>
+              </div>
+            </div>
+            <div class="fridge-interior" id="fridgeInterior">
+              <!-- Trendy LED Interior Lighting -->
+              <div class="fridge-lamp" id="fridgeLamp">
+                <div class="fridge-led-strip"></div>
+                <div class="fridge-lamp-glow"></div>
+              </div>
+              <div class="f-shelf fprotein" id="shelf-protein">
+                <div class="shelf-label">Proteins</div>
+                <div class="shelf-items"></div>
+                <div class="shelf-rail"></div>
+              </div>
+              <div class="f-shelf" id="shelf-veg">
+                <div class="shelf-label">Vegetables</div>
+                <div class="shelf-items"></div>
+                <div class="shelf-rail"></div>
+              </div>
+              <div class="f-shelf" id="shelf-dairy">
+                <div class="shelf-label">Dairy</div>
+                <div class="shelf-items"></div>
+                <div class="shelf-rail"></div>
+              </div>
+              <div class="f-shelf" id="shelf-fruit">
+                <div class="shelf-label">Fruits</div>
+                <div class="shelf-items"></div>
+                <div class="shelf-rail"></div>
+              </div>
+              <div class="f-shelf" id="shelf-spice">
+                <div class="shelf-label">Spices</div>
+                <div class="shelf-items"></div>
+                <div class="shelf-rail"></div>
+              </div>
+              <div class="f-shelf last" id="shelf-pantry">
+                <div class="shelf-label">Pantry / Grains</div>
+                <div class="shelf-items"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fridge Panel -->
+        <div class="fridge-side">
+          <div class="card-block">
+            <h3>Add Ingredients</h3>
+            <div class="f-search-wrap">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="fSearchInput" placeholder="Search ingredient..."
+                oninput="filterFridgeSuggestions(this.value)" />
+            </div>
+            <div class="sug-sections" id="fridgeSuggestions"></div>
+          </div>
+          <div class="card-block ai-card">
+            <h3>AI Analysis</h3>
+            <div class="ai-stat-row"><span>Items Indexed</span><strong id="fIndexCount">0</strong></div>
+            <div class="ai-stat-row"><span>Best Match</span><strong id="fBestMatch">—</strong></div>
+            <button class="btn-primary full" onclick="navigateTo('recipes')"><i
+                class="fa-solid fa-wand-magic-sparkles"></i> Find Recipes</button>
+          </div>
+          <div class="card-block voice-block">
+            <button class="voice-btn" onclick="showToast('Voice recognition activated! 🎤')">
+              <i class="fa-solid fa-microphone"></i> Voice Input
+            </button>
+            <button class="camera-btn" onclick="showToast('Camera AI scanning… 📷')">
+              <i class="fa-solid fa-camera"></i> Scan with Camera
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+     PAGE: RECIPES
+════════════════════════════════════════════════ -->
+  <div class="page" id="page-recipes">
+    <div class="page-hero">
+      <div class="container">
+        <h1><i class="fa-solid fa-bowl-rice"></i> <span data-i18n="recipes_title">Discover Recipes</span></h1>
+      </div>
+    </div>
+    <div class="container">
+      <div class="recipes-toolbar">
+        <div class="rt-search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="recipeSearch" placeholder="Search by name, ingredient, country..."
+            oninput="renderRecipes()" />
+        </div>
+        <button class="btn-primary sm" onclick="openAddRecipeModal()"><i class="fa-solid fa-plus"></i> Add
+          Recipe</button>
+      </div>
+      <div class="cat-pills" id="catPills">
+        <button class="cp active" data-cat="all">All</button>
+        <button class="cp" data-cat="arabic">Arabic Heritage</button>
+        <button class="cp" data-cat="levant">Levant</button>
+        <button class="cp" data-cat="maghreb">Maghreb</button>
+        <button class="cp" data-cat="world">International</button>
+        <button class="cp" data-cat="quick">Quick (&lt;30m)</button>
+      </div>
+      <div class="recipe-grid" id="recipeGrid"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+     PAGE: PLANNER
+════════════════════════════════════════════════ -->
+  <div class="page" id="page-planner">
+    <div class="page-hero">
+      <div class="container">
+        <h1><i class="fa-solid fa-calendar-days"></i> <span data-i18n="planner_title">Meal Planner</span></h1>
+        <p>Drag or schedule recipes. Your week at a glance.</p>
+      </div>
+    </div>
+    <div class="container">
+      <div class="planner-week" id="plannerWeek"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+     PAGE: SAVED
+════════════════════════════════════════════════ -->
+  <div class="page" id="page-saved">
+    <div class="page-hero">
+      <div class="container">
+        <h1><i class="fa-solid fa-bookmark"></i> <span data-i18n="saved_title">Saved Collection</span></h1>
+      </div>
+    </div>
+    <div class="container">
+      <div class="recipe-grid" id="savedGrid">
+        <div class="empty-state"><i class="fa-regular fa-bookmark"></i>
+          <p>No saved recipes yet. Tap the bookmark icon on any recipe!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+     PAGE: COMMUNITY
+════════════════════════════════════════════════ -->
+  <div class="page" id="page-community">
+    <div class="page-hero">
+      <div class="container">
+        <h1><i class="fa-solid fa-users"></i> <span data-i18n="comm_title">Community</span></h1>
+      </div>
+    </div>
+    <div class="container comm-layout">
+      <div class="comm-main">
+        <!-- Post Box -->
+        <div class="post-box">
+          <div class="post-box-top">
+            <div class="up-avatar sm">👨‍🍳</div>
+            <textarea id="postText" placeholder="Share a recipe, ask a question, or post your creation..."></textarea>
+          </div>
+          <div class="post-box-btns">
+            <button class="comm-media-btn" onclick="showToast('Photo upload coming soon!')"><i
+                class="fa-solid fa-image"></i> Photo</button>
+            <button class="btn-primary sm" onclick="createPost()">Post</button>
+          </div>
+        </div>
+        <!-- Feed -->
+        <div id="commFeed"></div>
+      </div>
+      <!-- Challenges Sidebar -->
+      <div class="comm-sidebar">
+        <div class="card-block">
+          <h3>🔥 Active Challenges</h3>
+          <div class="challenge-card-sm">
+            <div class="challenge-emoji">🥙</div>
+            <div>
+              <strong>Perfect Hummus</strong>
+              <p>432 participants</p>
+            </div>
+            <button class="btn-sm-gold">Join</button>
+          </div>
+          <div class="challenge-card-sm">
+            <div class="challenge-emoji">🍋</div>
+            <div>
+              <strong>Lemony Tagine Challenge</strong>
+              <p>217 participants</p>
+            </div>
+            <button class="btn-sm-gold">Join</button>
+          </div>
+        </div>
+        <div class="card-block">
+          <h3>🏅 Leaderboard</h3>
+          <ol class="leaderboard">
+            <li><span>ChefAmine</span><span>2840 pts</span></li>
+            <li><span>KitchenQueen</span><span>2410 pts</span></li>
+            <li><span>SpiceGuru</span><span>1980 pts</span></li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+     PAGE: PROFILE
+════════════════════════════════════════════════ -->
+  <div class="page" id="page-profile">
+    <div class="container" id="profileDetail"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+     MODALS
+════════════════════════════════════════════════ -->
+
+  <!-- RECIPE DETAIL MODAL -->
+  <div class="modal-overlay" id="recipeModal">
+    <div class="modal-pro">
+      <button class="modal-close" onclick="closeModal('recipeModal')">×</button>
+      <!-- Hero Banner -->
+      <div class="m-hero-banner" id="mHeroBanner">
+        <div class="m-hero-overlay">
+          <div class="m-badge-row">
+            <span id="mFlag">🫒</span>
+            <span class="m-country-badge" id="mCountry">Country</span>
+            <span class="m-level-badge" id="mLevelBadge">Level</span>
+            <span class="m-time-badge" id="mTimeBadge">Time</span>
+          </div>
+          <h1 id="mTitle">Recipe Title</h1>
+          <p id="mStory" class="m-story"></p>
+        </div>
+      </div>
+      <!-- Body -->
+      <div class="m-body">
+        <div class="m-col-left">
+          <div class="portion-ctrl">
+            <span>Portions:</span>
+            <button onclick="modPort(-1)">-</button>
+            <span id="mPortCount">4</span>
+            <button onclick="modPort(1)">+</button>
+          </div>
+          <div class="m-section-title">
+            Ingredients
+            <span class="badge-red" id="mMissingBadge">0 missing</span>
+          </div>
+          <ul class="m-ing-list" id="mIngList"></ul>
+        </div>
+        <div class="m-col-right">
+          <div class="card-block">
+            <h3>Plan to Cook</h3>
+            <input type="date" id="mPlanDate" class="date-input" />
+            <button class="btn-secondary full" onclick="scheduleRecipe()">Schedule <i
+                class="fa-solid fa-calendar-plus"></i></button>
+          </div>
+          <button class="btn-primary full lg" onclick="launchGuidedCooking()"><i class="fa-solid fa-play"></i> Start
+            Guided Cooking</button>
+          <button class="save-toggle-btn" id="mSaveBtn" onclick="toggleSaveRecipe()"><i
+              class="fa-regular fa-bookmark"></i> Save to Collection</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GUIDED COOKING MODAL -->
+  <div class="modal-overlay" id="guidedModal">
+    <div class="modal-pro guided-modal">
+      <button class="modal-close" onclick="closeModal('guidedModal')">×</button>
+      <div class="guided-header">
+        <h2 id="guidedTitle"></h2>
+        <div class="guided-progress-bar">
+          <div class="guided-progress-fill" id="guidedFill"></div>
+        </div>
+        <div class="guided-step-counter"><span id="guidedStepNum">1</span> / <span id="guidedStepTotal">1</span></div>
+      </div>
+      <div class="guided-body">
+        <div class="guided-step-text" id="guidedStepText"></div>
+        <div class="guided-timer">
+          <div class="timer-display" id="guidedTimer">00:00</div>
+          <div class="timer-controls">
+            <button onclick="startTimer()"><i class="fa-solid fa-play"></i></button>
+            <button onclick="pauseTimer()"><i class="fa-solid fa-pause"></i></button>
+            <button onclick="resetTimer()"><i class="fa-solid fa-rotate-left"></i></button>
+          </div>
+        </div>
+        <div class="guided-nav">
+          <button class="btn-outline" onclick="guidedPrev()"><i class="fa-solid fa-arrow-left"></i> Previous</button>
+          <button class="btn-primary" onclick="guidedNext()">Next <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD RECIPE MODAL -->
+  <div class="modal-overlay" id="addRecipeModal">
+    <div class="modal-card-sm">
+      <h2>Add Your Recipe</h2>
+      <form id="addRecipeForm" onsubmit="saveCustomRecipe(event)">
+        <div class="field-group"><label>Recipe Name</label>
+          <div class="field-wrap"><i class="fa-solid fa-pen"></i><input type="text" id="arName"
+              placeholder="My Grandmother's Couscous" required /></div>
+        </div>
+        <div class="field-group"><label>Country of Origin</label>
+          <div class="field-wrap"><i class="fa-solid fa-globe"></i><input type="text" id="arCountry"
+              placeholder="Tunisia" /></div>
+        </div>
+        <div class="field-group"><label>Category</label>
+          <select id="arCat" class="select-input">
+            <option value="arabic">Arabic Heritage</option>
+            <option value="levant">Levant</option>
+            <option value="maghreb">Maghreb</option>
+            <option value="world">International</option>
+          </select>
+        </div>
+        <div class="field-group"><label>Ingredients (comma separated)</label>
+          <div class="field-wrap"><i class="fa-solid fa-list-check"></i><input type="text" id="arIngs"
+              placeholder="Couscous, Lamb, Chickpeas, Harissa" required /></div>
+        </div>
+        <div class="field-group"><label>Cooking Time</label>
+          <div class="field-wrap"><i class="fa-solid fa-clock"></i><input type="text" id="arTime" placeholder="45m" />
+          </div>
+        </div>
+        <div class="field-group"><label>Difficulty</label>
+          <select id="arLevel" class="select-input">
+            <option>Beginner</option>
+            <option>Intermediate</option>
+            <option>Advanced</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-primary full">Save to My Recipes</button>
+      </form>
+      <button class="btn-text-gold" onclick="closeModal('addRecipeModal')">Cancel</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="script.js?v=3"></script>
+</body>
+
+</html>
