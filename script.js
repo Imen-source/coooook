@@ -384,24 +384,16 @@ let timerInterval = null;
 // ────────────────────────────────────────────────
 // INIT
 // ────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
   applyTranslations();
-  
-  // Check auth status — try backend session first, fall back to localStorage
-  try {
-    const status = await apiRequest('auth.php?action=status');
-    if (status.loggedIn) {
-      bootApp(status.user);
-    } else {
-      const localUser = JSON.parse(localStorage.getItem('cooks_user'));
-      if (localUser) bootApp(localUser);
-      else document.getElementById('authOverlay').classList.remove('hidden');
-    }
-  } catch (err) {
-    // No PHP server — use localStorage fallback
-    const localUser = JSON.parse(localStorage.getItem('cooks_user'));
-    if (localUser) bootApp(localUser);
-    else document.getElementById('authOverlay').classList.remove('hidden');
+
+  // localStorage-based auth: restore session on page load
+  const loggedIn  = localStorage.getItem('cooks_logged_in') === 'true';
+  const savedUser = localStorage.getItem('cooks_user');
+  if (loggedIn && savedUser) {
+    bootApp(JSON.parse(savedUser));
+  } else {
+    document.getElementById('authOverlay').classList.remove('hidden');
   }
 
   // Nav click listeners
@@ -605,47 +597,80 @@ function switchAuthTab(tab) {
   document.getElementById('formSignup').classList.toggle('active', tab === 'signup');
 }
 
-async function handleSignin(e) {
+function handleSignin(e) {
   e.preventDefault();
-  const email = e.target.querySelector('input[type="email"]').value;
-  const password = e.target.querySelector('input[type="password"]').value;
-  
-  try {
-    const res = await apiRequest('auth.php?action=login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password })
-    });
-    bootApp(res.user);
-    showToast(`Welcome back, ${res.user.username}! 👋`);
-  } catch (err) {}
+  const form     = e.target;
+  const email    = form.querySelector('input[type="email"]').value.trim();
+  const password = form.querySelector('input[type="password"]').value;
+
+  function showSigninError(msg) {
+    let err = form.querySelector('.auth-inline-error');
+    if (!err) {
+      err = document.createElement('div');
+      err.className = 'auth-inline-error';
+      err.style.cssText = 'color:#e53e3e;font-size:0.8rem;margin-top:8px;';
+      form.querySelector('button[type="submit"]').before(err);
+    }
+    err.textContent = msg;
+  }
+
+  form.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => {
+    const err = form.querySelector('.auth-inline-error');
+    if (err) err.remove();
+  }, { once: true }));
+
+  const stored = localStorage.getItem('cooks_user');
+  if (!stored) { showSigninError('Invalid email or password'); return; }
+  const user = JSON.parse(stored);
+  if (user.email !== email || user.password !== password) {
+    showSigninError('Invalid email or password');
+    return;
+  }
+
+  localStorage.setItem('cooks_logged_in', 'true');
+  bootApp(user);
+  showToast(`Welcome back, ${user.name}! 👨‍🍳`);
 }
 
-async function handleSignup(e) {
+function handleSignup(e) {
   e.preventDefault();
-  const username = document.getElementById('suName').value.trim();
+  const form     = e.target;
+  const name     = document.getElementById('suName').value.trim();
   const email    = document.getElementById('suEmail').value.trim();
   const password = document.getElementById('suPass').value;
   const confirm  = document.getElementById('suConfirm').value;
   const agreed   = document.getElementById('agreePrivacy').checked;
 
-  if (!username)       return showToast('Please enter a username');
-  if (password !== confirm) return showToast('Passwords do not match ❌');
-  if (!agreed)        return showToast('Please agree to the privacy terms');
+  function showSignupError(msg) {
+    let err = form.querySelector('.auth-inline-error');
+    if (!err) {
+      err = document.createElement('div');
+      err.className = 'auth-inline-error';
+      err.style.cssText = 'color:#e53e3e;font-size:0.8rem;margin-top:8px;';
+      form.querySelector('button[type="submit"]').before(err);
+    }
+    err.textContent = msg;
+  }
 
-  try {
-    const res = await apiRequest('auth.php?action=register', {
-      method: 'POST',
-      body: JSON.stringify({ username, email, password })
-    });
-    bootApp(res.user);
-    showToast('Account created successfully! 🎉');
-  } catch (err) {}
+  form.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => {
+    const err = form.querySelector('.auth-inline-error');
+    if (err) err.remove();
+  }, { once: true }));
+
+  if (!name || !email || !password || !confirm) { showSignupError('Please fill all fields'); return; }
+  if (password !== confirm)                      { showSignupError('Passwords do not match'); return; }
+  if (!email.includes('@'))                      { showSignupError('Please enter a valid email'); return; }
+  if (!agreed)                                   { showSignupError('Please agree to the privacy policy'); return; }
+
+  const user = { name, email, password, joined: new Date().toLocaleDateString() };
+  localStorage.setItem('cooks_user', JSON.stringify(user));
+  localStorage.setItem('cooks_logged_in', 'true');
+  bootApp(user);
+  showToast(`Welcome to Cook's, ${name}! 🍳`);
 }
 
 function mockGoogleLogin() {
-  const user = { username: 'GuestChef', name: 'Google Chef', level: 'Guest', joined: 'Today', isMock: true };
-  localStorage.setItem('cooks_user', JSON.stringify(user));
-  bootApp(user);
+  showToast('Google login coming soon! 🚀 Please use email sign in for now.');
 }
 
 // ────────────────────────────────────────────────
@@ -1295,6 +1320,7 @@ function markChallengePlayed() {
   localStorage.setItem('challenge_played_date', today);
   const days = JSON.parse(localStorage.getItem('heatmap_days') || '[]');
   if (!days.includes(today)) { days.push(today); localStorage.setItem('heatmap_days', JSON.stringify(days)); }
+  if (document.getElementById('page-profile').classList.contains('active')) renderProfile();
 }
 
 function addStreak() {
@@ -1430,7 +1456,7 @@ function submitQuizAnswer(btn, isCorrect) {
   markChallengePlayed();
   localStorage.setItem('challenge_played_card', 'quiz');
   localStorage.setItem('challenge_last_result', isCorrect ? 'correct' : 'wrong');
-  if (isCorrect) addStreak();
+  if (isCorrect) { addStreak(); if (document.getElementById('page-profile').classList.contains('active')) renderProfile(); }
   renderQuiz();
   renderCommunity();
 }
@@ -1439,7 +1465,7 @@ function submitMissingAnswer(btn, isCorrect) {
   markChallengePlayed();
   localStorage.setItem('challenge_played_card', 'missing');
   localStorage.setItem('challenge_last_result', isCorrect ? 'correct' : 'wrong');
-  if (isCorrect) addStreak();
+  if (isCorrect) { addStreak(); if (document.getElementById('page-profile').classList.contains('active')) renderProfile(); }
   renderQuiz();
   renderCommunity();
 }
@@ -1448,7 +1474,7 @@ function submitTriviaAnswer(btn, isCorrect) {
   markChallengePlayed();
   localStorage.setItem('challenge_played_card', 'trivia');
   localStorage.setItem('challenge_last_result', isCorrect ? 'correct' : 'wrong');
-  if (isCorrect) addStreak();
+  if (isCorrect) { addStreak(); if (document.getElementById('page-profile').classList.contains('active')) renderProfile(); }
   renderQuiz();
   renderCommunity();
 }
@@ -1460,8 +1486,10 @@ function renderProfile() {
   const T    = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
   const el   = document.getElementById('profileDetail');
   const u    = (typeof currentUser !== 'undefined' && currentUser) || {};
+  const savedAvatar = localStorage.getItem('user_avatar');
   const username = u.name || 'Guest Chef';
-  const handle   = '@' + username.toLowerCase().replaceAll(/\s+/g, '_') + '_cooks';
+  const handle   = u.email ? u.email : '@' + username.toLowerCase().replaceAll(/\s+/g, '_') + '_cooks';
+  const memberSince = u.joined ? `Member since ${u.joined}` : '';
 
   // ── Core data ──
   const streak      = Number.parseInt(localStorage.getItem('quiz_streak') || '0', 10);
@@ -1562,9 +1590,16 @@ function renderProfile() {
     <div style="background:linear-gradient(135deg,#1b2e18 0%,#243d1f 50%,#2d5022 100%);border-radius:20px;padding:40px 24px 32px;text-align:center;margin-bottom:24px;position:relative;overflow:hidden;">
       <div style="position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800')center/cover;opacity:0.08;border-radius:20px;pointer-events:none;"></div>
       <div style="position:relative;">
-        <div style="width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,#d4a017,#f5c842);display:flex;align-items:center;justify-content:center;font-size:2.4rem;margin:0 auto 16px;border:4px solid rgba(255,255,255,0.2);box-shadow:0 8px 24px rgba(212,160,23,0.5);">👨‍🍳</div>
+        <div style="position:relative;width:90px;height:90px;margin:0 auto 16px;">
+          <div id="profile-avatar-circle" style="width:90px;height:90px;border-radius:50%;background:${savedAvatar ? 'none' : 'linear-gradient(135deg,#d4a017,#f5c842)'};display:flex;align-items:center;justify-content:center;font-size:2.4rem;border:4px solid ${savedAvatar ? '#d4a017' : 'rgba(255,255,255,0.2)'};box-shadow:0 8px 24px rgba(212,160,23,0.5);overflow:hidden;">
+            ${savedAvatar ? `<img src="${savedAvatar}" style="width:90px;height:90px;border-radius:50%;object-fit:cover;display:block;" />` : '👨‍🍳'}
+          </div>
+          <button onclick="document.getElementById('profile-avatar-input').click()" style="position:absolute;bottom:0;right:0;width:28px;height:28px;border-radius:50%;background:#d4a017;border:2px solid #fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.85rem;padding:0;line-height:1;">📷</button>
+          <input type="file" id="profile-avatar-input" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none;" onchange="handleProfileAvatarUpload(this)" />
+        </div>
         <h2 style="color:#fff;font-size:1.6rem;margin:0 0 4px;font-weight:800;">${username}</h2>
-        <p style="color:#a8c8a0;font-size:0.88rem;margin:0 0 10px;">${handle}</p>
+        <p style="color:#a8c8a0;font-size:0.88rem;margin:0 0 4px;">${handle}</p>
+        ${memberSince ? `<p style="color:#7aab72;font-size:0.75rem;margin:0 0 6px;">${memberSince}</p>` : ''}
         <p style="color:#c8e0c0;font-size:0.85rem;margin:0 0 26px;">${T.prof_bio}</p>
         <div style="display:flex;justify-content:center;align-items:center;">
           <div style="text-align:center;padding:0 28px;">
@@ -1675,10 +1710,49 @@ function renderProfile() {
       if (bar) bar.style.width = `${progressPct}%`;
     });
   });
+
+  // ── Update navbar avatar from localStorage ──
+  const navAvatar = document.querySelector('.up-avatar');
+  if (navAvatar) {
+    if (savedAvatar) {
+      navAvatar.style.background = 'none';
+      navAvatar.style.padding = '0';
+      navAvatar.style.overflow = 'hidden';
+      navAvatar.innerHTML = `<img src="${savedAvatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;" />`;
+    } else {
+      navAvatar.innerHTML = '👨‍🍳';
+    }
+  }
+
+  // ── Profile avatar upload handler ──
+  window.handleProfileAvatarUpload = function(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const b64 = e.target.result;
+      localStorage.setItem('user_avatar', b64);
+      const circle = document.getElementById('profile-avatar-circle');
+      if (circle) {
+        circle.style.background = 'none';
+        circle.style.borderColor = '#d4a017';
+        circle.innerHTML = `<img src="${b64}" style="width:90px;height:90px;border-radius:50%;object-fit:cover;display:block;" />`;
+      }
+      const nav = document.querySelector('.up-avatar');
+      if (nav) {
+        nav.style.background = 'none';
+        nav.style.padding = '0';
+        nav.style.overflow = 'hidden';
+        nav.innerHTML = `<img src="${b64}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;" />`;
+      }
+      showToast('Profile photo updated! ✅');
+    };
+    reader.readAsDataURL(file);
+  };
 }
 
-async function logout() {
-  await apiRequest('auth.php?action=logout');
+function logout() {
+  localStorage.removeItem('cooks_logged_in');
   location.reload();
 }
 
