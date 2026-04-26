@@ -1,0 +1,119 @@
+version: "3.8"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  Cook's — SonarQube + PostgreSQL Stack
+#
+#  Services:
+#    sonarqube  – SonarQube Community Edition (static analysis UI)
+#    sonar-db   – PostgreSQL 15 database for SonarQube
+#    scanner    – One-shot sonar-scanner container (runs analysis then exits)
+#
+#  Usage:
+#    1. Start SonarQube:
+#         docker-compose up -d sonarqube sonar-db
+#
+#    2. Wait ~60 s, then open: http://localhost:9000
+#       Default login: admin / admin  (change it on first login)
+#
+#    3. Run the scanner (from project root):
+#         docker-compose run --rm scanner
+#
+#    4. View results at http://localhost:9000/projects
+#
+#  Stop everything:
+#    docker-compose down
+#
+#  Remove all data (clean slate):
+#    docker-compose down -v
+# ═══════════════════════════════════════════════════════════════════════════════
+
+services:
+
+  # ── PostgreSQL — SonarQube's backing store ──────────────────────────────────
+  sonar-db:
+    image: postgres:15-alpine
+    container_name: cooks_sonar_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     sonar
+      POSTGRES_PASSWORD: sonar_secret
+      POSTGRES_DB:       sonarqube
+    volumes:
+      - sonar_db_data:/var/lib/postgresql/data
+    networks:
+      - sonar_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonar -d sonarqube"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── SonarQube Community Edition ─────────────────────────────────────────────
+  sonarqube:
+    image: sonarqube:10.4-community
+    container_name: cooks_sonarqube
+    restart: unless-stopped
+    depends_on:
+      sonar-db:
+        condition: service_healthy
+    environment:
+      SONAR_JDBC_URL:      jdbc:postgresql://sonar-db:5432/sonarqube
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar_secret
+      # Increase heap if you scan large JS files
+      SONAR_WEB_JVM_OPTS: "-Xmx512m -Xms128m"
+      SONAR_CE_JVM_OPTS:  "-Xmx512m -Xms128m"
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonar_data:/opt/sonarqube/data
+      - sonar_extensions:/opt/sonarqube/extensions
+      - sonar_logs:/opt/sonarqube/logs
+    networks:
+      - sonar_net
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9000/api/system/status | grep -q '\"status\":\"UP\"'"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  # ── sonar-scanner — one-shot analysis container ─────────────────────────────
+  scanner:
+    image: sonarsource/sonar-scanner-cli:5
+    container_name: cooks_sonar_scanner
+    depends_on:
+      sonarqube:
+        condition: service_healthy
+    environment:
+      # Override token via env: SONAR_TOKEN=<your-token> docker-compose run scanner
+      SONAR_HOST_URL: http://sonarqube:9000
+      SONAR_TOKEN:    ${SONAR_TOKEN:-admin}    # set via .env or -e flag
+    volumes:
+      # Mount the entire project so the scanner can read every source file
+      - .:/usr/src
+      # Cache scanner state between runs
+      - sonar_scanner_cache:/opt/sonar-scanner/.sonar/cache
+    working_dir: /usr/src
+    networks:
+      - sonar_net
+    # scanner exits after analysis — it's not a long-running service
+    profiles:
+      - analysis
+
+# ── Volumes ───────────────────────────────────────────────────────────────────
+volumes:
+  sonar_db_data:
+  sonar_data:
+  sonar_extensions:
+  sonar_logs:
+  sonar_scanner_cache:
+
+# ── Network ───────────────────────────────────────────────────────────────────
+networks:
+  sonar_net:
+    driver: bridge
