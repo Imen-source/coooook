@@ -20,6 +20,7 @@ import {
   postJSON,
   getAndCheck,
   thinkShort,
+  createSummaryHandler,
 } from './config.js';
 
 export const options = {
@@ -107,3 +108,5 @@ export default function () {
     thinkShort();
   });
 }
+
+export const handleSummary = createSummaryHandler('smoke');

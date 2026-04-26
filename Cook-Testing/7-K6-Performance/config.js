@@ -95,3 +95,67 @@ export function getAndCheck(url, label, params = {}) {
 export function thinkShort()  { sleep(Math.random() * 1 + 0.5);  } // 0.5–1.5 s
 export function thinkMedium() { sleep(Math.random() * 2 + 1);    } // 1–3 s
 export function thinkLong()   { sleep(Math.random() * 3 + 2);    } // 2–5 s
+
+// ── Sample recipe payload (for create-recipe tests) ──────────────────────────
+export function randomRecipe() {
+  const titles = ['Tagine Marocain', 'Kabsa Saudienne', 'Shakshuka', 'Couscous Berbère', 'Hummus Libanais'];
+  return {
+    title:       `${titles[Math.floor(Math.random() * titles.length)]} ${__VU}_${Date.now()}`,
+    story:       'A traditional dish passed down through generations.',
+    country:     'Morocco',
+    level:       'Beginner',
+    prep_time:   '30m',
+    category:    'arabic',
+    image_url:   '',
+    servings:    4,
+    ingredients: [
+      { name: 'Chicken', amount: '500g' },
+      { name: 'Tomatoes', amount: '3' },
+      { name: 'Spices', amount: '1 tsp' },
+    ],
+    steps: [
+      { instruction: 'Prepare all ingredients.', timer_seconds: 0 },
+      { instruction: 'Cook on medium heat for 30 minutes.', timer_seconds: 1800 },
+    ],
+  };
+}
+
+// ── Shared handleSummary factory ──────────────────────────────────────────────
+// Usage: export const handleSummary = createSummaryHandler('smoke');
+export function createSummaryHandler(testName) {
+  return function (data) {
+    const p95      = data.metrics.http_req_duration?.values?.['p(95)']  || 0;
+    const p99      = data.metrics.http_req_duration?.values?.['p(99)']  || 0;
+    const errRate  = (data.metrics.http_req_failed?.values?.rate        || 0) * 100;
+    const checksPct = (data.metrics.checks?.values?.rate               || 0) * 100;
+    const totalReqs = data.metrics.http_reqs?.values?.count             || 0;
+    const passed   = errRate < (testName === 'stress' ? 10 : 1) && checksPct > (testName === 'spike' ? 80 : 98);
+
+    console.log('\n════════════════════════════════════════');
+    console.log(`  ${testName.toUpperCase()} TEST SUMMARY`);
+    console.log('════════════════════════════════════════');
+    console.log(`  Total Requests : ${totalReqs}`);
+    console.log(`  p(95) Latency  : ${p95.toFixed(0)} ms`);
+    console.log(`  p(99) Latency  : ${p99.toFixed(0)} ms`);
+    console.log(`  Error Rate     : ${errRate.toFixed(2)} %`);
+    console.log(`  Check Pass     : ${checksPct.toFixed(2)} %`);
+    console.log(`  Result         : ${passed ? 'PASSED ✓' : 'FAILED ✗'}`);
+    console.log('════════════════════════════════════════\n');
+
+    return {
+      [`results/${testName}-summary.json`]: JSON.stringify(data, null, 2),
+    };
+  };
+}
+
+// ── Authenticated-session helper ──────────────────────────────────────────────
+// Registers (idempotent) and logs in a user; returns true on success.
+// After this call the VU's cookie jar holds the PHPSESSID for this domain.
+export function ensureLoggedIn(user) {
+  postJSON(`${API}/auth.php?action=register`, user); // may return 409 — that is fine
+  const res = postJSON(`${API}/auth.php?action=login`, {
+    email:    user.email,
+    password: user.password,
+  });
+  return res.status === 200;
+}

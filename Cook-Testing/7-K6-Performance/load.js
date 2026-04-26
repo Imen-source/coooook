@@ -25,6 +25,7 @@ import {
   thinkMedium,
   thinkShort,
   randomUser,
+  createSummaryHandler,
 } from './config.js';
 
 // ── Custom metrics ────────────────────────────────────────────────────────────
@@ -141,3 +142,5 @@ export default function () {
   else if (roll === 1) communityRead();
   else authenticatedUser();
 }
+
+export const handleSummary = createSummaryHandler('load');

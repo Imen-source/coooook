@@ -32,6 +32,7 @@ import {
   thinkLong,
   thinkShort,
   randomUser,
+  createSummaryHandler,
 } from './config.js';
 
 // ── Configurable via env ──────────────────────────────────────────────────────
@@ -147,3 +148,5 @@ export default function () {
   else if (roll < 0.80) pollCommunity();
   else                  authLifecycle();
 }
+
+export const handleSummary = createSummaryHandler('soak');

@@ -24,6 +24,7 @@ import {
   thinkShort,
   thinkMedium,
   randomUser,
+  createSummaryHandler,
 } from './config.js';
 
 const spikeErrors        = new Rate('spike_error_rate');
@@ -113,3 +114,5 @@ export default function () {
   else if (roll === 1) spikeCommunity();
   else spikeAuth();
 }
+
+export const handleSummary = createSummaryHandler('spike');

@@ -24,6 +24,7 @@ import {
   thinkShort,
   thinkMedium,
   randomUser,
+  createSummaryHandler,
 } from './config.js';
 
 const errorRate    = new Rate('error_rate');
@@ -108,3 +109,5 @@ export default function () {
     });
   }
 }
+
+export const handleSummary = createSummaryHandler('stress');
