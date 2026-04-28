@@ -13,8 +13,8 @@
 const API_URL = 'api';
 
 async function apiRequest(endpoint, options = {}) {
+  const url = `${API_URL}/${endpoint}`;
   try {
-    const url = `${API_URL}/${endpoint}`;
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -22,16 +22,12 @@ async function apiRequest(endpoint, options = {}) {
         ...options.headers
       }
     });
-    const text = await response.text();
-    try {
-      const result = JSON.parse(text);
-      if (!response.ok) return null;
-      return result;
-    } catch (e) {
-      return null;
-    }
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'API Error');
+    return result;
   } catch (err) {
-    return null;
+    showToast(err.message);
+    throw err;
   }
 }
 
@@ -328,130 +324,51 @@ const RECIPES_DB = [
 // ────────────────────────────────────────────────
 // INGREDIENTS DATABASE (for fridge suggestions)
 // ────────────────────────────────────────────────
-const INGREDIENT_SUGGESTIONS = {
-  protein: ['Chicken', 'Lamb', 'Beef', 'Tuna', 'Eggs', 'Salmon', 'Shrimp', 'Turkey', 'Sardines', 'Minced Meat'],
-  vegetables: ['Tomato', 'Onion', 'Garlic', 'Potato', 'Carrot', 'Spinach', 'Pepper', 'Zucchini', 'Eggplant', 'Cucumber', 'Leek', 'Celery'],
-  dairy: ['Milk', 'Cheese', 'Butter', 'Yogurt', 'Cream', 'Feta'],
-  fruits: ['Lemon', 'Orange', 'Apple', 'Banana', 'Dates', 'Figs', 'Pomegranate'],
-  spices: ['Cumin', 'Coriander', 'Saffron', 'Turmeric', 'Cinnamon', 'Harissa', 'Paprika', 'Cardamom', 'Ras El Hanout', 'Mint'],
-  pantry: ['Rice', 'Couscous', 'Pasta', 'Flour', 'Olive Oil', 'Chickpeas', 'Lentils', 'Tomato Paste', 'Bread', 'Semolina']
+const INGS_DB = {
+  protein: [
+    { id: 'lamb',    name: 'Lamb',    emoji: '🥩', img: 'https://images.unsplash.com/photo-1603048588665-791ca8aea617?w=300&q=80' },
+    { id: 'beef',    name: 'Beef Slice', emoji: '🥩', img: 'https://images.unsplash.com/photo-1608344824338-782d8d8ce867?w=300&q=80' },
+    { id: 'chicken', name: 'Chicken Fillet', emoji: '🍗', img: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=300&q=80' },
+    { id: 'fish',    name: 'Fish Fillet', emoji: '🐟', img: 'https://images.unsplash.com/photo-1534482421-64566f976cfa?w=300&q=80' },
+    { id: 'shrimp',  name: 'Single Shrimp', emoji: '🦐', img: 'https://images.unsplash.com/photo-1559742811-822873691df8?w=300&q=80' },
+    { id: 'eggs',    name: 'One Egg', emoji: '🥚', img: 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=300&q=80' },
+  ],
+  veg: [
+    { id: 'onions',   name: 'One Onion', emoji: '🧅', img: 'https://images.unsplash.com/photo-1508747703725-719777637510?w=300&q=80' },
+    { id: 'tomatoes', name: 'One Tomato', emoji: '🍅', img: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=300&q=80' },
+    { id: 'potato',   name: 'One Potato', emoji: '🥔', img: 'https://images.unsplash.com/photo-1518977676601-b53f02ac10dd?w=300&q=80' },
+    { id: 'peppers',  name: 'One Bell Pepper', emoji: '🌶️', img: 'https://images.unsplash.com/photo-1563513330627-5994e6876f11?w=300&q=80' },
+    { id: 'garlic',   name: 'Garlic Clove', emoji: '🧄', img: 'https://images.unsplash.com/photo-1540148426945-6cf22a6b2383?w=300&q=80' },
+    { id: 'carrot',   name: 'One Carrot', emoji: '🥕', img: 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=300&q=80' },
+  ],
+  fruit: [
+    { id: 'lemon',  name: 'One Lemon', emoji: '🍋', img: 'https://images.unsplash.com/photo-1590502593747-42a996133562?w=300&q=80' },
+    { id: 'orange', name: 'One Orange', emoji: '🍊', img: 'https://images.unsplash.com/photo-1557800636-894a64c1696f?w=300&q=80' },
+    { id: 'dates',  name: 'One Date', emoji: '🫐', img: 'https://images.unsplash.com/photo-1569350080814-928fc5863391?w=300&q=80' },
+  ],
+  spice: [
+    { id: 'sumac',    name: 'Sumac Powder', emoji: '🏺', img: 'https://images.unsplash.com/photo-1591122119106-44473859bc06?w=300&q=80' },
+    { id: 'zaatar',   name: 'Zaatar Mix', emoji: '🌿', img: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=300&q=80' },
+    { id: 'tahini',   name: 'Tahini Paste', emoji: '🫙', img: 'https://images.unsplash.com/photo-1516714435131-44d6b64dc6a2?w=300&q=80' },
+  ],
+  pantry: [
+    { id: 'rice',      name: 'Basmati Rice', emoji: '🍚', img: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=300&q=80' },
+    { id: 'couscous',  name: 'Couscous Grains', emoji: '🍛', img: 'https://images.unsplash.com/photo-1541518763669-27f704fa1ad2?w=300&q=80' },
+  ]
 };
 
-const CATEGORY_KEY_MAP = {
-  protein: 'protein',
-  vegetables: 'veg',
-  dairy: 'dairy',
-  fruits: 'fruit',
-  spices: 'spice',
-  pantry: 'pantry'
-};
-
-const SHELF_TO_SUGGESTION_KEY = {
-  protein: 'protein',
-  veg: 'vegetables',
-  dairy: 'dairy',
-  fruit: 'fruits',
-  spice: 'spices',
-  pantry: 'pantry'
-};
-
-const SUGGESTION_EMOJIS = {
-  Chicken: '🍗',
-  Lamb: '🥩',
-  Beef: '🥩',
-  Tuna: '🐟',
-  Eggs: '🥚',
-  Salmon: '🐟',
-  Shrimp: '🦐',
-  Turkey: '🦃',
-  Sardines: '🐟',
-  'Minced Meat': '🥩',
-  Tomato: '🍅',
-  Onion: '🧅',
-  Garlic: '🧄',
-  Potato: '🥔',
-  Carrot: '🥕',
-  Spinach: '🥬',
-  Pepper: '🌶️',
-  Zucchini: '🥒',
-  Eggplant: '🍆',
-  Cucumber: '🥒',
-  Leek: '🌿',
-  Celery: '🌿',
-  Milk: '🥛',
-  Cheese: '🧀',
-  Butter: '🧈',
-  Yogurt: '🥛',
-  Cream: '🥛',
-  Feta: '🧀',
-  Lemon: '🍋',
-  Orange: '🍊',
-  Apple: '🍎',
-  Banana: '🍌',
-  Dates: '🫐',
-  Figs: '🫐',
-  Pomegranate: '🍎',
-  Cumin: '🌰',
-  Coriander: '🌿',
-  Saffron: '🌼',
-  Turmeric: '🟡',
-  Cinnamon: '🪵',
-  Harissa: '🌶️',
-  Paprika: '🌶️',
-  Cardamom: '🌿',
-  'Ras El Hanout': '🌿',
-  Mint: '🌿',
-  Rice: '🍚',
-  Couscous: '🍛',
-  Pasta: '🍝',
-  Flour: '🌾',
-  'Olive Oil': '🫒',
-  Chickpeas: '🫛',
-  Lentils: '🫛',
-  'Tomato Paste': '🍅',
-  Bread: '🍞',
-  Semolina: '🌾'
-};
-
-function slugifyIngredient(name) {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-}
-
-function getIngredientEmoji(name) {
-  return SUGGESTION_EMOJIS[name] || '🥣';
-}
-
-function buildIngredientDb() {
-  const db = { protein: [], veg: [], dairy: [], fruit: [], spice: [], pantry: [] };
-  for (const [group, items] of Object.entries(INGREDIENT_SUGGESTIONS)) {
-    const shelfKey = CATEGORY_KEY_MAP[group];
-    items.forEach(name => {
-      db[shelfKey].push({
-        id: slugifyIngredient(name),
-        name,
-        emoji: getIngredientEmoji(name),
-        category: shelfKey
-      });
-    });
-  }
-  return db;
-}
-
-const INGS_DB = buildIngredientDb();
-
-const catLabels = { protein: 'Proteins', veg: 'Vegetables', dairy: 'Dairy', fruit: 'Fruits', spice: 'Spices', pantry: 'Pantry / Grains' };
+const catLabels = { protein: 'Proteins', veg: 'Vegetables', dairy: 'Dairy', fruit: 'Fruits', spice: 'Spices & Sauces', pantry: 'Pantry & Grains' };
 
 // ────────────────────────────────────────────────
 // APPLICATION STATE
 // ────────────────────────────────────────────────
 let currentUser   = null;
-let fridge        = {};
-let savedRecipes  = JSON.parse(localStorage.getItem('cooks_saved_recipes') || '[]');
-let mealPlan      = JSON.parse(localStorage.getItem('cooks_meal_plan') || '{}');
+let fridge        = [];
+let savedRecipes  = [];
+let mealPlan      = {};
 let customRecipes = []; // Local ones if any, otherwise from DB
 let communityPosts= [];
 let challenges    = [];
-let activeProfileUsername = null;
 
 let activeRecipe  = null;
 let portions      = 4;
@@ -463,6 +380,7 @@ let guidedSteps   = [];
 let guidedStep    = 0;
 let timerSeconds  = 0;
 let timerInterval = null;
+
 
 // ────────────────────────────────────────────────
 // INIT
@@ -477,7 +395,6 @@ document.addEventListener('DOMContentLoaded', () => {
     bootApp(JSON.parse(savedUser));
   } else {
     document.getElementById('authOverlay').classList.remove('hidden');
-    populateSavedSignin();
   }
 
   // Nav click listeners
@@ -513,25 +430,6 @@ document.addEventListener('DOMContentLoaded', () => {
   loadInitialData();
 });
 
-function populateSavedSignin() {
-  const stored = localStorage.getItem('cooks_user');
-  if (!stored) return;
-
-  try {
-    const user = JSON.parse(stored);
-    const signinForm = document.getElementById('formSignin');
-    if (!signinForm) return;
-
-    const emailInput = signinForm.querySelector('input[type="email"]');
-    const passwordInput = signinForm.querySelector('input[type="password"]');
-
-    if (emailInput && user.email) emailInput.value = user.email;
-    if (passwordInput && user.password) passwordInput.value = user.password;
-  } catch (err) {
-    // Ignore malformed stored auth data and keep the form empty.
-  }
-}
-
 async function loadInitialData() {
   await fetchRecipes();
   renderAll();
@@ -549,7 +447,6 @@ function filterByCategory(cat) {
 
 function bootApp(user) {
   currentUser = user;
-  activeProfileUsername = null;
   document.getElementById('authOverlay').classList.add('hidden');
   document.getElementById('topbar').classList.remove('hidden');
   
@@ -564,10 +461,6 @@ function bootApp(user) {
     document.cookie = "is_guest=true; path=/";
   }
 
-  const savedCountEl = document.getElementById('homesSavedCount');
-  if (savedCountEl) savedCountEl.textContent = savedRecipes.length;
-  generateNotifications();
-  renderNotifBadge();
   loadAndRender();
   navigateTo('home');
   history.replaceState({ page: 'home' }, '', '#home');
@@ -592,55 +485,56 @@ function browseAsGuest() {
 }
 
 async function fetchMealPlan() {
-  const plan = await apiRequest('planner.php?action=list');
-  if (!plan) mealPlan = JSON.parse(localStorage.getItem('cooks_plan') || '{}');
-  else mealPlan = plan;
+  try {
+    const plan = await apiRequest('planner.php?action=list');
+    mealPlan = plan;
+  } catch (e) {
+    mealPlan = JSON.parse(localStorage.getItem('cooks_plan') || '{}');
+  }
 }
 
 async function fetchRecipes() {
-  const recipes = await apiRequest(`recipes.php?action=list&category=${currentCat}&search=${recipeSearch}`);
-  if (!recipes) return;
-  RECIPES_DB.length = 0;
-  recipes.forEach(r => RECIPES_DB.push({
-    ...r,
-    id: r.id.toString(),
-    name: r.title,
-    img: r.image_url,
-    time: r.prep_time,
-    basePortions: r.servings || 4
-  }));
+  try {
+    const recipes = await apiRequest(`recipes.php?action=list&category=${currentCat}&search=${recipeSearch}`);
+    RECIPES_DB.length = 0;
+    recipes.forEach(r => RECIPES_DB.push({
+      ...r,
+      id: r.id.toString(),
+      name: r.title,
+      img: r.image_url,
+      time: r.prep_time,
+      basePortions: r.servings || 4
+    }));
+  } catch (e) { /* keep built-in RECIPES_DB */ }
 }
 
 async function fetchFridge() {
-  const items = await apiRequest('fridge.php?action=list');
-  if (!items) {
-    fridge = JSON.parse(localStorage.getItem('cooks_fridge') || '{}');
-  } else {
+  try {
+    const items = await apiRequest('fridge.php?action=list');
     fridge = {};
     items.forEach(i => fridge[i.ingredient_name.toLowerCase()] = i);
+  } catch (e) {
+    fridge = JSON.parse(localStorage.getItem('cooks_fridge') || '{}');
   }
 }
 
 async function fetchCommunity() {
-  const posts = await apiRequest('community.php?action=feed');
-  if (!posts) {
+  try {
+    communityPosts = await apiRequest('community.php?action=feed');
+  } catch (e) {
     communityPosts = JSON.parse(localStorage.getItem('cooks_posts') || '[]');
-  } else {
-    communityPosts = posts;
   }
 }
 
 async function fetchChallenges() {
-  const result = await apiRequest('community.php?action=challenges');
-  if (!result) {
-    challenges = [];
-  } else {
-    challenges = result;
-  }
+  try {
+    challenges = await apiRequest('community.php?action=challenges');
+  } catch (e) { challenges = []; }
 }
 
 function renderAll() {
   renderHome();
+  renderFridgeSuggestions();
   renderFridgeShelves();
   renderFridgeDoorScreen();
   renderRecipes();
@@ -648,7 +542,6 @@ function renderAll() {
   renderSaved();
   renderCommunity();
   renderProfile();
-  updateFridgeCount();
 }
 
 // ────────────────────────────────────────────────
@@ -773,189 +666,8 @@ function handleSignup(e) {
   const user = { name, email, password, joined: new Date().toLocaleDateString() };
   localStorage.setItem('cooks_user', JSON.stringify(user));
   localStorage.setItem('cooks_logged_in', 'true');
-  resetUserGameData();
-  currentUser = user;
-  ensureSocialProfile(user.name, {
-    followers: 0,
-    following: 0,
-    posts: 0,
-    joined: user.joined,
-    bio: 'Cooking, sharing, and building my recipe collection one dish at a time.',
-    avatar: '👨‍🍳'
-  });
   bootApp(user);
-  // Overwrite any stale pre-login renders immediately so the user
-  // never sees old streak/challenge data if they navigate before
-  // loadAndRender()'s async chain completes.
-  renderProfile();
-  renderCommunity();
   showToast(`Welcome to Cook's, ${name}! 🍳`);
-}
-
-function resetUserGameData() {
-  localStorage.removeItem('cooks_fridge');
-  localStorage.removeItem('cooks_saved_recipes');
-  localStorage.removeItem('cooks_meal_plan');
-  localStorage.removeItem('cooks_notifications');
-  localStorage.removeItem('community_user_posts');
-  localStorage.removeItem('quiz_streak');
-  localStorage.removeItem('challenge_played_date');
-  localStorage.removeItem('streak_last_date');
-  localStorage.removeItem('heatmap_days');
-  localStorage.removeItem('user_avatar');
-  localStorage.removeItem('quiz_last_played');
-  localStorage.removeItem('challenge_played_card');
-  localStorage.removeItem('challenge_last_result');
-  localStorage.removeItem('streak_last_updated');
-  localStorage.removeItem('missing_last_played');
-  localStorage.removeItem('trivia_last_played');
-  localStorage.removeItem('cooks_following');
-
-  for (let i = 0; i < 10; i++) {
-    localStorage.removeItem('post_likes_' + i);
-    localStorage.removeItem('post_reactions_' + i);
-    localStorage.removeItem('comments_' + i);
-    localStorage.removeItem('user_reaction_' + i);
-  }
-
-  fridge = {};
-  savedRecipes = [];
-  mealPlan = {};
-  communityPosts = [];
-
-  renderFridgeShelves();
-  renderFridgeDoorScreen();
-  renderFridgeSuggestions();
-
-  const homeFridgeCount = document.getElementById('homeFridgeCount');
-  const homeSavedCount = document.getElementById('homesSavedCount');
-  const fridgeIndexCount = document.getElementById('fIndexCount');
-  if (homeFridgeCount) homeFridgeCount.textContent = '0';
-  if (homeSavedCount) homeSavedCount.textContent = '0';
-  if (fridgeIndexCount) fridgeIndexCount.textContent = '0';
-}
-
-const DEMO_PROFILE_DEFAULTS = {
-  RaniaCooks: { followers: 31, following: 84, joined: 'Jan 2025', bio: 'Couscous lover sharing family cooking traditions.', avatar: '👩‍🍳' },
-  ChefAmine: { followers: 24, following: 39, joined: 'Feb 2025', bio: 'Breakfast experiments and comfort food every day.', avatar: '🧑‍🍳' },
-  MalikaCooks: { followers: 41, following: 52, joined: 'Mar 2025', bio: 'Tagines, heritage recipes, and warm kitchen stories.', avatar: '👩‍🍳' },
-  YoussefKitchen: { followers: 18, following: 26, joined: 'Apr 2025', bio: 'Fresh ingredients, garden flavors, and light mezze.', avatar: '🧑‍🍳' }
-};
-
-function getCurrentUserKey() {
-  return currentUser?.email || currentUser?.name || 'guest';
-}
-
-function getStoredProfiles() {
-  return JSON.parse(localStorage.getItem('cooks_social_profiles') || '{}');
-}
-
-function setStoredProfiles(profiles) {
-  localStorage.setItem('cooks_social_profiles', JSON.stringify(profiles));
-}
-
-function getFollowingMap() {
-  return JSON.parse(localStorage.getItem('cooks_following') || '{}');
-}
-
-function setFollowingMap(followingMap) {
-  localStorage.setItem('cooks_following', JSON.stringify(followingMap));
-}
-
-function ensureSocialProfile(username, overrides = {}) {
-  if (!username) return null;
-  const profiles = getStoredProfiles();
-  const current = profiles[username] || {};
-  const base = DEMO_PROFILE_DEFAULTS[username] || {};
-  profiles[username] = {
-    followers: 0,
-    following: 0,
-    posts: 0,
-    bio: '',
-    avatar: '👨‍🍳',
-    ...base,
-    ...current,
-    ...overrides
-  };
-  setStoredProfiles(profiles);
-  return profiles[username];
-}
-
-function syncCurrentUserSocialProfile() {
-  if (!currentUser?.name) return null;
-  const userPosts = JSON.parse(localStorage.getItem('community_user_posts') || '[]');
-  return ensureSocialProfile(currentUser.name, {
-    followers: ensureSocialProfile(currentUser.name)?.followers || 0,
-    following: ensureSocialProfile(currentUser.name)?.following || 0,
-    posts: userPosts.length,
-    joined: currentUser.joined || '',
-    bio: 'Cooking, sharing, and building my recipe collection one dish at a time.',
-    avatar: localStorage.getItem('user_avatar') || '👨‍🍳'
-  });
-}
-
-function getSocialProfile(username) {
-  if (!username) return null;
-  if (currentUser?.name) syncCurrentUserSocialProfile();
-  return ensureSocialProfile(username);
-}
-
-function getUserCommunityPosts(username) {
-  const DEMO_POSTS = [
-    { postId: 'demo_0', username: 'RaniaCooks', dish: 'Couscous', caption: 'Friday couscous tradition 🫶 who else does this every week?', image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=600', time: '2 days ago', likes: 67 },
-    { postId: 'demo_1', username: 'ChefAmine', dish: 'Shakshuka', caption: 'Made this for breakfast this morning, the egg yolks came out perfect 🍳', image: 'https://images.unsplash.com/photo-1590412200988-a436970781fa?w=600', time: '2 hours ago', likes: 24 },
-    { postId: 'demo_2', username: 'MalikaCooks', dish: 'Chicken Tagine', caption: "My grandmother's recipe, finally nailed the preserved lemon balance 🫕", image: 'https://images.unsplash.com/photo-1547592180-85f173990554?w=600', time: '5 hours ago', likes: 41 },
-    { postId: 'demo_3', username: 'YoussefKitchen', dish: 'Tabbouleh', caption: 'Fresh from the garden, this is the real deal 🌿', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600', time: 'yesterday', likes: 18 },
-  ];
-  const userPosts = JSON.parse(localStorage.getItem('community_user_posts') || '[]');
-  return [...userPosts, ...DEMO_POSTS].filter(post => post.username === username);
-}
-
-function openUserProfile(username) {
-  if (!username) return;
-  activeProfileUsername = username;
-  renderProfile();
-  navigateTo('profile');
-}
-
-function openOwnProfile() {
-  activeProfileUsername = null;
-  renderProfile();
-  navigateTo('profile');
-}
-
-function isFollowingUser(username) {
-  const followingMap = getFollowingMap();
-  const userKey = getCurrentUserKey();
-  const followingList = followingMap[userKey] || [];
-  return followingList.includes(username);
-}
-
-function toggleFollowUser(username) {
-  if (!username || username === currentUser?.name) return;
-  const followingMap = getFollowingMap();
-  const userKey = getCurrentUserKey();
-  const followingList = followingMap[userKey] || [];
-  const profiles = getStoredProfiles();
-  const targetProfile = ensureSocialProfile(username);
-  const ownProfile = currentUser?.name ? ensureSocialProfile(currentUser.name) : null;
-
-  if (followingList.includes(username)) {
-    followingMap[userKey] = followingList.filter(name => name !== username);
-    targetProfile.followers = Math.max(0, (targetProfile.followers || 0) - 1);
-    if (ownProfile) ownProfile.following = Math.max(0, (ownProfile.following || 0) - 1);
-  } else {
-    followingMap[userKey] = [...followingList, username];
-    targetProfile.followers = (targetProfile.followers || 0) + 1;
-    if (ownProfile) ownProfile.following = (ownProfile.following || 0) + 1;
-  }
-
-  profiles[username] = targetProfile;
-  if (ownProfile && currentUser?.name) profiles[currentUser.name] = ownProfile;
-  setFollowingMap(followingMap);
-  setStoredProfiles(profiles);
-  renderCommunity();
-  renderProfile();
 }
 
 function mockGoogleLogin() {
@@ -1046,41 +758,25 @@ function toggleFridgeDoor() {
   document.getElementById('smartFridge').classList.toggle('open');
 }
 
-function getIngredientMetaById(id) {
-  return Object.values(INGS_DB).flat().find(i => i.id === id);
-}
-
-function getShelfIngredients(cat) {
-  const shelfKnown = INGS_DB[cat] || [];
-  const knownIds = new Set(shelfKnown.map(ing => ing.id));
-  const custom = Object.entries(fridge)
-    .filter(([id, item]) => (item.category || '').toLowerCase() === cat && !knownIds.has(id))
-    .map(([id, item]) => ({
-      id,
-      name: item.display_name || item.ingredient_name || id,
-      emoji: item.emoji || '🥣'
-    }));
-  return [...shelfKnown.filter(ing => fridge[ing.id]), ...custom];
-}
-
-function createIngredientChipMarkup(id, name, emoji) {
-  const safeName = (name || id).replace(/'/g, '&#39;');
-  return `<div style="display:inline-flex; align-items:center; gap:6px; background:var(--card); border:1px solid var(--border); border-radius:20px; padding:6px 12px; margin:4px; font-size:0.8rem; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-    <span style="font-size:1.1rem;">${emoji}</span>
-    <span style="font-weight:600; color:var(--text);">${safeName}</span>
-    <button onclick="event.stopPropagation(); removeIngredient('${id}')" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:0.9rem; padding:0; margin-left:4px; line-height:1;">&times;</button>
-</div>`;
-}
-
 function renderFridgeShelves() {
+  const allIngs = Object.values(INGS_DB).flat();
   const shelves = { protein: 'shelf-protein', veg: 'shelf-veg', dairy: 'shelf-dairy', fruit: 'shelf-fruit', spice: 'shelf-spice', pantry: 'shelf-pantry' };
   for (const [cat, shelfId] of Object.entries(shelves)) {
     const shelfEl = document.getElementById(shelfId);
     if (!shelfEl) continue;
     const itemsEl = shelfEl.querySelector('.shelf-items');
     if (!itemsEl) continue;
-    const chips = getShelfIngredients(cat).map(ing => createIngredientChipMarkup(ing.id, ing.name, ing.emoji));
-    itemsEl.innerHTML = chips.join('');
+    itemsEl.innerHTML = '';
+    const ingsInCat = INGS_DB[cat] || [];
+    ingsInCat.forEach(ing => {
+      if (!fridge[ing.id]) return;
+      const chip = document.createElement('div');
+      chip.className = 'ing-chip';
+      chip.title = ing.name;
+      chip.textContent = ing.emoji;
+      chip.onclick = e => { e.stopPropagation(); removeIng(ing.id); };
+      itemsEl.appendChild(chip);
+    });
   }
 
   // Update analysis
@@ -1092,83 +788,53 @@ function renderFridgeShelves() {
 
 function renderFridgeSuggestions(filter = '') {
   const box = document.getElementById('fridgeSuggestions');
-  const query = (filter || '').trim().toLowerCase();
   box.innerHTML = '';
-
   for (const [cat, ings] of Object.entries(INGS_DB)) {
-    const available = ings.filter(i => !fridge[i.id] && (!query || i.name.toLowerCase().includes(query)));
+    const available = ings.filter(i => !fridge[i.id] && (!filter || i.name.toLowerCase().includes(filter.toLowerCase())));
     if (!available.length) continue;
     const section = document.createElement('div');
     section.className = 'sug-cat-row';
     section.innerHTML = `<h4>${catLabels[cat]}</h4><div class="sug-pills">${available.map(i => `
-      <button class="sug-pill" onclick="addIngredient('${i.id}')">
-        <span>${i.emoji}</span>
+      <button class="sug-pill with-img" onclick="addIng('${i.id}')">
+        <img src="${i.img}" alt="${i.name}" />
         <span>${i.name}</span>
       </button>`).join('')}</div>`;
     box.appendChild(section);
-  }
-
-  const knownNames = Object.values(INGS_DB).flat().map(i => i.name.toLowerCase());
-  const hasMatch = !query || knownNames.some(name => name.includes(query));
-  if (query && !hasMatch) {
-    const customBox = document.createElement('div');
-    customBox.className = 'sug-cat-row';
-    customBox.innerHTML = `<h4>Add Custom Ingredient</h4>
-      <div class="sug-pills" style="display:flex; flex-direction:column; align-items:flex-start; gap:10px;">
-        <button class="sug-pill" onclick="showCustomIngredientCategorySelector('${filter.replace(/'/g, "\\'")}')">Add '${filter}' to fridge →</button>
-        <div id="customIngredientChooser" style="display:none; width:100%; gap:8px; align-items:center; flex-wrap:wrap;">
-          <select id="customIngredientCategory" class="select-input" style="max-width:220px;">
-            <option value="protein">Proteins</option>
-            <option value="veg">Vegetables</option>
-            <option value="dairy">Dairy</option>
-            <option value="fruit">Fruits</option>
-            <option value="spice">Spices</option>
-            <option value="pantry">Pantry / Grains</option>
-          </select>
-          <button class="btn-primary sm" onclick="confirmCustomIngredientAdd('${filter.replace(/'/g, "\\'")}')">Add Ingredient</button>
-        </div>
-      </div>`;
-    box.appendChild(customBox);
   }
 }
 
 function filterFridgeSuggestions(val) { renderFridgeSuggestions(val); }
 
-async function addIngredient(id, customData = null) {
-  const ingInfo = customData || getIngredientMetaById(id);
+async function addIng(id) {
+  const ingInfo = Object.values(INGS_DB).flat().find(i => i.id === id);
   if (fridge[id]) return;
-
-  fridge[id] = {
-    ingredient_name: id,
-    display_name: ingInfo?.name || id,
-    category: ingInfo?.category || 'pantry',
-    emoji: ingInfo?.emoji || '🥣'
-  };
-  localStorage.setItem('cooks_fridge', JSON.stringify(fridge));
+  // Update UI instantly for snappiness
+  fridge[id] = { ingredient_name: id, category: ingInfo?.cat || 'General' };
   renderFridgeShelves();
-  renderFridgeSuggestions(document.getElementById('fSearchInput')?.value || '');
+  renderFridgeSuggestions();
   renderAll(); // Updates recipe match score
-
-  const res = await apiRequest('fridge.php?action=add', {
-    method: 'POST',
-    body: JSON.stringify({ name: ingInfo?.name || id, category: ingInfo?.category || 'pantry' })
-  });
-  if (res) {
+  
+  try {
+    const res = await apiRequest('fridge.php?action=add', {
+      method: 'POST',
+      body: JSON.stringify({ name: id, category: ingInfo?.cat || 'General' })
+    });
     fridge[id].id = res.id;
+  } catch (err) {
     localStorage.setItem('cooks_fridge', JSON.stringify(fridge));
   }
 }
 
-async function removeIngredient(id) {
+
+async function removeIng(id) {
   const item = fridge[id];
   if (!item) return;
-
+  
   delete fridge[id];
-  localStorage.setItem('cooks_fridge', JSON.stringify(fridge));
   renderFridgeShelves();
-  renderFridgeSuggestions(document.getElementById('fSearchInput')?.value || '');
+  renderFridgeSuggestions();
   renderAll();
-
+  
   try {
     if (item.id) {
       await apiRequest('fridge.php?action=remove', {
@@ -1181,52 +847,8 @@ async function removeIngredient(id) {
   }
 }
 
-function showCustomIngredientCategorySelector(name) {
-  const chooser = document.getElementById('customIngredientChooser');
-  if (chooser) chooser.style.display = 'flex';
-}
 
-function toggleTypedIngredientPanel() {
-  const panel = document.getElementById('typedIngredientPanel');
-  if (!panel) return;
-  panel.style.display = panel.style.display === 'none' || !panel.style.display ? 'block' : 'none';
-}
 
-function confirmCustomIngredientAdd(name) {
-  const trimmedName = (name || '').trim();
-  if (!trimmedName) return;
-  const category = document.getElementById('customIngredientCategory')?.value || 'pantry';
-  const customId = slugifyIngredient(trimmedName);
-  addIngredient(customId, {
-    name: trimmedName,
-    category,
-    emoji: getIngredientEmoji(trimmedName)
-  });
-}
-
-function addTypedIngredientFromPanel() {
-  const nameInput = document.getElementById('typedIngredientName');
-  const categoryInput = document.getElementById('typedIngredientCategory');
-  const trimmedName = nameInput?.value.trim();
-  if (!trimmedName) {
-    showToast('Please type an ingredient name first.');
-    return;
-  }
-
-  const customId = slugifyIngredient(trimmedName);
-  addIngredient(customId, {
-    name: trimmedName,
-    category: categoryInput?.value || 'pantry',
-    emoji: getIngredientEmoji(trimmedName)
-  });
-
-  if (nameInput) nameInput.value = '';
-  if (categoryInput) categoryInput.value = 'pantry';
-  showToast(`${trimmedName} added to your fridge.`);
-}
-
-async function addIng(id) { return addIngredient(id); }
-async function removeIng(id) { return removeIngredient(id); }
 
 async function updateFridgeState() {
   await fetchFridge();
@@ -1265,11 +887,6 @@ function renderRecipes() {
     const catMatch = currentCat === 'all' || r.cat === currentCat || (currentCat === 'quick' && r.quick);
     const searchMatch = !recipeSearch || r.name.toLowerCase().includes(recipeSearch.toLowerCase()) || r.ingredients.some(i => i.name.toLowerCase().includes(recipeSearch.toLowerCase()));
     return catMatch && searchMatch;
-  });
-  filtered.sort((a, b) => {
-    const matchDiff = getMatchPct(b) - getMatchPct(a);
-    if (matchDiff !== 0) return matchDiff;
-    return a.name.localeCompare(b.name);
   });
   if (!filtered.length) {
     grid.innerHTML = '<div class="empty-state"><i class="fa-solid fa-bowl-rice"></i><p>No recipes found. Try a different search or category.</p></div>';
@@ -1310,10 +927,7 @@ function toggleQuickSave(id, btn) {
     btn.classList.add('saved');
     btn.innerHTML = '<i class="fa-solid fa-bookmark"></i>';
   }
-  localStorage.setItem('cooks_saved_recipes', JSON.stringify(savedRecipes));
-  const countEl = document.getElementById('homesSavedCount');
-  if (countEl) countEl.textContent = savedRecipes.length;
-  if (document.getElementById('page-profile').classList.contains('active')) renderProfile();
+  localStorage.setItem('cooks_saved', JSON.stringify(savedRecipes));
   renderSaved();
   renderHome();
 }
@@ -1339,7 +953,6 @@ function openRecipeModal(id) {
   sb.innerHTML = `<i class="fa-${isSaved?'solid':'regular'} fa-bookmark"></i> ${isSaved ? 'Saved!' : 'Save to Collection'}`;
   sb.className = `save-toggle-btn ${isSaved ? 'saved' : ''}`;
 
-  document.getElementById('mPlanDate').min = new Date().toISOString().split('T')[0];
   renderModalIngredients();
   document.getElementById('recipeModal').classList.add('open');
 }
@@ -1370,31 +983,31 @@ function toggleSaveRecipe() {
   const isSaved = savedRecipes.includes(id);
   if (isSaved) savedRecipes = savedRecipes.filter(x => x !== id);
   else savedRecipes.push(id);
-  localStorage.setItem('cooks_saved_recipes', JSON.stringify(savedRecipes));
+  localStorage.setItem('cooks_saved', JSON.stringify(savedRecipes));
   renderModalIngredients(); // refresh
   const sb = document.getElementById('mSaveBtn');
   const nowSaved = savedRecipes.includes(id);
-  sb.innerHTML = nowSaved ? '✅ Saved to Collection' : '🔖 Save to Collection';
+  sb.innerHTML = `<i class="fa-${nowSaved?'solid':'regular'} fa-bookmark"></i> ${nowSaved ? 'Saved!' : 'Save to Collection'}`;
   sb.className = `save-toggle-btn ${nowSaved ? 'saved' : ''}`;
-  const countEl = document.getElementById('homesSavedCount');
-  if (countEl) countEl.textContent = savedRecipes.length;
-  if (document.getElementById('page-profile').classList.contains('active')) renderProfile();
   renderSaved(); renderHome();
   showToast(nowSaved ? 'Saved to Collection 📚' : 'Removed from Collection');
 }
 
-function scheduleRecipe() {
+async function scheduleRecipe() {
   const date = document.getElementById('mPlanDate').value;
-  if (!date) return showToast('Please select a date first!');
-  if (!activeRecipe) return;
-  mealPlan = JSON.parse(localStorage.getItem('cooks_meal_plan') || '{}');
-  mealPlan[date] = activeRecipe.id;
-  localStorage.setItem('cooks_meal_plan', JSON.stringify(mealPlan));
-  generateNotifications(); renderNotifBadge();
-  closeModal('recipeModal');
-  showToast('Recipe scheduled! 📅');
-  renderPlanner();
-  renderHome();
+  if (!date || !activeRecipe) return showToast('Please pick a date first!');
+  
+  try {
+    await apiRequest('planner.php?action=save', {
+      method: 'POST',
+      body: JSON.stringify({ date, recipe_id: activeRecipe.id })
+    });
+    mealPlan[date] = activeRecipe.id;
+    renderPlanner(); 
+    renderHome();
+    renderFridgeDoorScreen();
+    showToast('Recipe scheduled! 📅');
+  } catch (err) {}
 }
 
 // ────────────────────────────────────────────────
@@ -1440,11 +1053,9 @@ function renderTimer() {
 // PLANNER
 // ────────────────────────────────────────────────
 function renderPlanner() {
-  mealPlan = JSON.parse(localStorage.getItem('cooks_meal_plan') || '{}');
   const cal = document.getElementById('plannerWeek');
   cal.innerHTML = '';
   const today = new Date();
-  today.setDate(today.getDate() - 1);
   const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   for (let i = 0; i < 7; i++) {
     const d = new Date(); d.setDate(today.getDate() + i);
@@ -1461,14 +1072,18 @@ function renderPlanner() {
   }
 }
 
-function unplanDay(date) {
-  mealPlan = JSON.parse(localStorage.getItem('cooks_meal_plan') || '{}');
-  delete mealPlan[date];
-  localStorage.setItem('cooks_meal_plan', JSON.stringify(mealPlan));
-  renderPlanner();
-  renderHome();
-  renderFridgeDoorScreen();
-  showToast('Plan removed.');
+async function unplanDay(date) {
+  try {
+    await apiRequest('planner.php?action=remove', {
+      method: 'POST',
+      body: JSON.stringify({ date })
+    });
+    delete mealPlan[date];
+    renderPlanner(); 
+    renderHome();
+    renderFridgeDoorScreen();
+    showToast('Plan removed.');
+  } catch (err) {}
 }
 
 // ────────────────────────────────────────────────
@@ -1513,14 +1128,9 @@ function createPost() {
     ...(imgData ? { image: imgData } : {}),
   };
 
-  let userPosts = JSON.parse(localStorage.getItem('community_user_posts') || '[]');
-  userPosts.push(newPost);
+  const userPosts = JSON.parse(localStorage.getItem('community_user_posts') || '[]');
+  userPosts.unshift(newPost);
   localStorage.setItem('community_user_posts', JSON.stringify(userPosts));
-
-  const userPostsCount = JSON.parse(localStorage.getItem('community_user_posts') || '[]').length;
-  if (document.getElementById('page-profile').classList.contains('active')) {
-    renderProfile();
-  }
 
   textarea.value = '';
   window._pendingPostImage = null;
@@ -1601,7 +1211,6 @@ function renderCommunity() {
   const feed = document.getElementById('commFeed');
   const postTa = document.getElementById('postText');
   if (postTa) postTa.placeholder = T.comm_write_placeholder;
-  syncCurrentUserSocialProfile();
 
   const DEMO_POSTS = [
     { postId: 'demo_0', username: 'RaniaCooks',     dish: 'Couscous',       caption: 'Friday couscous tradition 🫶 who else does this every week?',              image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=600', time: '2 days ago',  likes: 67 },
@@ -1616,58 +1225,43 @@ function renderCommunity() {
   const streak   = Number.parseInt(localStorage.getItem('quiz_streak') || '0', 10);
   const unlocked = getUnlockedReactions(streak);
 
-  feed.innerHTML = allPosts.map((p, idx) => {
+  feed.innerHTML = allPosts.map((p) => {
     const likesKey = `post_likes_${p.postId}`;
     let displayLikes = localStorage.getItem(likesKey);
-    if (displayLikes === null) { displayLikes = p.likes || 0; localStorage.setItem(likesKey, String(displayLikes)); }
+    if (displayLikes === null) { displayLikes = p.likes; localStorage.setItem(likesKey, String(p.likes)); }
     else displayLikes = Number(displayLikes);
 
-    const rxnCounts = JSON.parse(localStorage.getItem(`reactions_${idx}`) || '{}');
-    const userRxn   = localStorage.getItem(`user_reaction_${idx}`);
+    const rxnData     = JSON.parse(localStorage.getItem(`post_reactions_${p.postId}`) || '{}');
+    const userClicked = rxnData._user || [];
 
     const freeBar = REACTION_FREE.map(e => {
-      const n      = rxnCounts[e] || 0;
-      const active = userRxn === e;
-      return `<button class="rxn-btn${active ? ' rxn-active' : ''}" onclick="handleDemoReaction(${idx},'${e}','${p.postId}')">${e}<span>${n || ''}</span></button>`;
+      const n      = rxnData[e] || 0;
+      const active = userClicked.includes(e);
+      return `<button class="rxn-btn${active ? ' rxn-active' : ''}" onclick="handleDemoReaction('${p.postId}','${e}')">${e}<span>${n || ''}</span></button>`;
     }).join('');
 
     const lockBar = REACTION_LOCKED.map(e => {
       if (unlocked.includes(e)) {
-        const n      = rxnCounts[e] || 0;
-        const active = userRxn === e;
-        return `<button class="rxn-btn rxn-unlocked${active ? ' rxn-active' : ''}" onclick="handleDemoReaction(${idx},'${e}','${p.postId}')">${e}<span>${n || ''}</span></button>`;
+        const n      = rxnData[e] || 0;
+        const active = userClicked.includes(e);
+        return `<button class="rxn-btn rxn-unlocked${active ? ' rxn-active' : ''}" onclick="handleDemoReaction('${p.postId}','${e}')">${e}<span>${n || ''}</span></button>`;
       }
       return `<button class="rxn-btn rxn-locked" onclick="showDemoLockMsg('${p.postId}')">${e} 🔒</button>`;
     }).join('');
-
-    const comments     = JSON.parse(localStorage.getItem(`comments_${idx}`) || '[]');
-    const commentCount = comments.length;
-    const commentsHtml = comments.map(c => `
-      <div style="display:flex;gap:8px;margin-bottom:10px;align-items:flex-start;">
-        <div class="up-avatar sm">👨‍🍳</div>
-        <div>
-          <strong style="font-size:0.82rem;">${c.username}</strong>
-          <p style="font-size:0.85rem;margin:2px 0 0;line-height:1.5;">${c.text}</p>
-          <span style="font-size:0.72rem;color:var(--muted,#94a3b8);">${c.time}</span>
-        </div>
-      </div>`).join('');
 
     const avatarStyle = p.isOwn ? 'background:#e8f5e9;' : '';
     const youBadge    = p.isOwn ? '<span style="font-size:0.7rem;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:1px 5px;margin-left:4px;font-weight:600;">You</span>' : '';
     const dishSpan    = p.dish  ? `<span class="post-dish">${p.dish}</span>` : '';
     const imgHtml     = p.image ? `<img src="${p.image}" alt="${p.dish || 'post'}" class="post-img" onerror="this.style.display='none'" />` : '';
-    const isOwnProfile = p.username === currentUser?.name;
-    const isFollowing = isFollowingUser(p.username);
-    const followBtn = isOwnProfile ? '' : `<button onclick="toggleFollowUser('${p.username}')" style="margin-left:8px;background:${isFollowing ? 'var(--surface2,#f1f5f9)' : 'var(--gold,#d4a017)'};color:${isFollowing ? 'var(--text,#1e293b)' : '#fff'};border:1px solid ${isFollowing ? 'var(--border,#e2e8f0)' : 'var(--gold,#d4a017)'};border-radius:999px;padding:5px 10px;cursor:pointer;font-size:0.72rem;font-weight:700;">${isFollowing ? 'Following' : 'Follow'}</button>`;
 
     return `
     <div class="comm-post-card">
       ${imgHtml}
       <div class="post-body">
         <div class="post-header">
-          <div class="up-avatar sm" style="${avatarStyle};cursor:pointer;" onclick="openUserProfile('${p.username}')">Chef</div>
+          <div class="up-avatar sm" style="${avatarStyle}">👨‍🍳</div>
           <div>
-            <span class="post-username" style="cursor:pointer;" onclick="openUserProfile('${p.username}')">${p.username}</span>${youBadge}${followBtn}
+            <span class="post-username">${p.username}</span>${youBadge}
             ${dishSpan}
           </div>
           <span class="post-time">${p.time}</span>
@@ -1676,123 +1270,37 @@ function renderCommunity() {
         <p class="post-caption">${p.caption}</p>
         <div class="rxn-bar">${freeBar}${lockBar}</div>
         <div class="lock-msg" id="lock-msg-${p.postId}"></div>
-        <div style="display:flex;gap:10px;margin-top:10px;">
-          <button id="comment-btn-${idx}" onclick="toggleComments(${idx})" style="background:none;border:1px solid var(--border,#e2e8f0);border-radius:20px;padding:4px 12px;cursor:pointer;font-size:0.85rem;display:inline-flex;align-items:center;gap:5px;color:var(--text,#1e293b);">💬 <span id="comment-count-${idx}">${commentCount}</span></button>
-          <button id="share-btn-${idx}" onclick="sharePost(${idx})" style="background:none;border:1px solid var(--border,#e2e8f0);border-radius:20px;padding:4px 12px;cursor:pointer;font-size:0.85rem;display:inline-flex;align-items:center;gap:5px;color:var(--text,#1e293b);">🔗 Share</button>
-        </div>
-      </div>
-      <div id="comments-section-${idx}" style="display:none;border-top:1px solid var(--border,#e2e8f0);padding:14px 18px 12px;">
-        <div id="comments-list-${idx}">${commentsHtml}</div>
-        <div style="display:flex;gap:8px;margin-top:10px;">
-          <input type="text" id="comment-input-${idx}" placeholder="Add a comment..." style="flex:1;border:1px solid var(--border,#e2e8f0);border-radius:8px;padding:7px 10px;font-size:0.85rem;background:var(--surface,#fff);color:var(--text,#1e293b);outline:none;" onkeydown="if(event.key==='Enter')addComment(${idx})" />
-          <button onclick="addComment(${idx})" style="background:var(--gold,#d4a017);color:#fff;border:none;border-radius:8px;padding:7px 14px;cursor:pointer;font-weight:700;font-size:0.85rem;">Send</button>
-        </div>
       </div>
     </div>`;
   }).join('');
 }
 
-function handleDemoReaction(postIndex, emoji, postId) {
-  const rxnKey    = `reactions_${postIndex}`;
-  const userKey   = `user_reaction_${postIndex}`;
-  const rxnCounts = JSON.parse(localStorage.getItem(rxnKey) || '{}');
-  const prevEmoji = localStorage.getItem(userKey);
-
-  if (prevEmoji === emoji) {
-    // Toggle off: deselect current reaction
-    rxnCounts[emoji] = Math.max(0, (rxnCounts[emoji] || 0) - 1);
-    localStorage.removeItem(userKey);
-    if (emoji === '❤️') _adjustPostLikes(postId, -1);
-  } else {
-    if (prevEmoji) {
-      // Remove old selection first
-      rxnCounts[prevEmoji] = Math.max(0, (rxnCounts[prevEmoji] || 0) - 1);
-      if (prevEmoji === '❤️') _adjustPostLikes(postId, -1);
+function handleDemoReaction(postId, emoji) {
+  const key     = `post_reactions_${postId}`;
+  const rxnData = JSON.parse(localStorage.getItem(key) || '{}');
+  if (!rxnData._user) rxnData._user = [];
+  if (!rxnData._user.includes(emoji)) {
+    rxnData._user.push(emoji);
+    rxnData[emoji] = (rxnData[emoji] || 0) + 1;
+    localStorage.setItem(key, JSON.stringify(rxnData));
+    if (emoji === '❤️') {
+      const lk = `post_likes_${postId}`;
+      const el = document.getElementById(`post-likes-${postId}`);
+      const current = el ? Number(el.textContent.replaceAll(/\D/g, '')) : Number(localStorage.getItem(lk) || '0');
+      const updated = current + 1;
+      localStorage.setItem(lk, String(updated));
+      if (el) el.textContent = `❤️ ${updated} likes`;
     }
-    // Apply new selection
-    rxnCounts[emoji] = (rxnCounts[emoji] || 0) + 1;
-    localStorage.setItem(userKey, emoji);
-    if (emoji === '❤️') _adjustPostLikes(postId, +1);
   }
-  localStorage.setItem(rxnKey, JSON.stringify(rxnCounts));
   renderCommunity();
 }
 
-function _adjustPostLikes(postId, delta) {
-  const lk      = `post_likes_${postId}`;
-  const updated = Math.max(0, Number(localStorage.getItem(lk) || '0') + delta);
-  localStorage.setItem(lk, String(updated));
-}
-
-function toggleComments(postIndex) {
-  const sec = document.getElementById(`comments-section-${postIndex}`);
-  if (!sec) return;
-  const opening = sec.style.display === 'none';
-  sec.style.display = opening ? 'block' : 'none';
-  if (opening) {
-    const input = document.getElementById(`comment-input-${postIndex}`);
-    if (input) setTimeout(() => input.focus(), 50);
-  }
-}
-
-function addComment(postIndex) {
-  const input = document.getElementById(`comment-input-${postIndex}`);
-  if (!input) return;
-  const text = input.value.trim();
-  if (!text) return;
-  const comments = JSON.parse(localStorage.getItem(`comments_${postIndex}`) || '[]');
-  comments.push({
-    username: (typeof currentUser !== 'undefined' && currentUser?.name) || 'You',
-    text,
-    time: 'Just now'
-  });
-  localStorage.setItem(`comments_${postIndex}`, JSON.stringify(comments));
-  input.value = '';
-  const list = document.getElementById(`comments-list-${postIndex}`);
-  if (list) {
-    list.innerHTML = comments.map(c => `
-      <div style="display:flex;gap:8px;margin-bottom:10px;align-items:flex-start;">
-        <div class="up-avatar sm">👨‍🍳</div>
-        <div>
-          <strong style="font-size:0.82rem;">${c.username}</strong>
-          <p style="font-size:0.85rem;margin:2px 0 0;line-height:1.5;">${c.text}</p>
-          <span style="font-size:0.72rem;color:var(--muted,#94a3b8);">${c.time}</span>
-        </div>
-      </div>`).join('');
-  }
-  const countEl = document.getElementById(`comment-count-${postIndex}`);
-  if (countEl) countEl.textContent = comments.length;
-}
-
-function sharePost(postIndex) {
-  const text = `Check out this amazing dish on Cook's! 🍳 cooks-app.com/post/${postIndex}`;
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text)
-      .then(() => showToast('Link copied to clipboard! 🔗'))
-      .catch(() => _sharePostFallback(postIndex, text));
-  } else {
-    _sharePostFallback(postIndex, text);
-  }
-}
-
-function _sharePostFallback(postIndex, text) {
-  document.querySelectorAll('.share-fallback-popup').forEach(el => el.remove());
-  const btn = document.getElementById(`share-btn-${postIndex}`);
-  if (!btn) { showToast(text); return; }
-  const popup = document.createElement('div');
-  popup.className = 'share-fallback-popup';
-  popup.style.cssText = 'position:absolute;bottom:calc(100% + 6px);left:0;background:#1e293b;color:#f8fafc;font-size:0.72rem;padding:7px 11px;border-radius:8px;word-break:break-all;z-index:300;max-width:240px;box-shadow:0 3px 10px rgba(0,0,0,.25);';
-  popup.textContent = text;
-  btn.style.position = 'relative';
-  btn.appendChild(popup);
-  setTimeout(() => popup.remove(), 3000);
-}
-
 function showDemoLockMsg(postId) {
+  const T = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
   document.querySelectorAll('.lock-msg').forEach(m => { m.textContent = ''; m.classList.remove('visible'); });
   const msg = document.getElementById(`lock-msg-${postId}`);
   if (!msg) return;
-  msg.textContent = 'Complete challenges to unlock';
+  msg.textContent = T.comm_unlock_tooltip;
   msg.classList.add('visible');
   setTimeout(() => { msg.textContent = ''; msg.classList.remove('visible'); }, 2400);
 }
@@ -1954,7 +1462,6 @@ function submitQuizAnswer(btn, isCorrect) {
   localStorage.setItem('challenge_played_card', 'quiz');
   localStorage.setItem('challenge_last_result', isCorrect ? 'correct' : 'wrong');
   if (isCorrect) { addStreak(); if (document.getElementById('page-profile').classList.contains('active')) renderProfile(); }
-  generateNotifications(); renderNotifBadge();
   renderQuiz();
   renderCommunity();
 }
@@ -1964,7 +1471,6 @@ function submitMissingAnswer(btn, isCorrect) {
   localStorage.setItem('challenge_played_card', 'missing');
   localStorage.setItem('challenge_last_result', isCorrect ? 'correct' : 'wrong');
   if (isCorrect) { addStreak(); if (document.getElementById('page-profile').classList.contains('active')) renderProfile(); }
-  generateNotifications(); renderNotifBadge();
   renderQuiz();
   renderCommunity();
 }
@@ -1974,7 +1480,6 @@ function submitTriviaAnswer(btn, isCorrect) {
   localStorage.setItem('challenge_played_card', 'trivia');
   localStorage.setItem('challenge_last_result', isCorrect ? 'correct' : 'wrong');
   if (isCorrect) { addStreak(); if (document.getElementById('page-profile').classList.contains('active')) renderProfile(); }
-  generateNotifications(); renderNotifBadge();
   renderQuiz();
   renderCommunity();
 }
@@ -1986,69 +1491,10 @@ function renderProfile() {
   const T    = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
   const el   = document.getElementById('profileDetail');
   const u    = (typeof currentUser !== 'undefined' && currentUser) || {};
-  syncCurrentUserSocialProfile();
   const savedAvatar = localStorage.getItem('user_avatar');
-  const username = activeProfileUsername || u.name || 'Guest Chef';
-  const isOwnProfile = username === (u.name || 'Guest Chef');
-  const profileData = getSocialProfile(username) || { followers: 0, following: 0, posts: 0, bio: '', avatar: '👨‍🍳' };
-  const handle   = isOwnProfile && u.email ? u.email : '@' + username.toLowerCase().replaceAll(/\s+/g, '_') + '_cooks';
-  const memberSince = profileData.joined ? `Member since ${profileData.joined}` : (u.joined ? `Member since ${u.joined}` : '');
-  const viewedPosts = getUserCommunityPosts(username);
-
-  if (!isOwnProfile) {
-    const followBtn = `<button class="btn-primary" style="margin-top:14px;" onclick="toggleFollowUser('${username}')">${isFollowingUser(username) ? 'Following' : 'Follow'}</button>`;
-    const postsHtml = viewedPosts.map(post => `
-      <div class="comm-post-card">
-        ${post.image ? `<img src="${post.image}" alt="${post.dish || 'post'}" class="post-img" onerror="this.style.display='none'" />` : ''}
-        <div class="post-body">
-          <div class="post-header">
-            <div class="up-avatar sm">${profileData.avatar || '👨‍🍳'}</div>
-            <div>
-              <span class="post-username">${post.username}</span>
-              ${post.dish ? `<span class="post-dish">${post.dish}</span>` : ''}
-            </div>
-            <span class="post-time">${post.time}</span>
-          </div>
-          <p class="post-caption">${post.caption}</p>
-        </div>
-      </div>
-    `).join('') || '<div class="empty-state"><i class="fa-solid fa-users"></i><p>No posts yet.</p></div>';
-
-    el.innerHTML = `
-      <div style="background:linear-gradient(135deg,#1b2e18 0%,#243d1f 50%,#2d5022 100%);border-radius:20px;padding:40px 24px 32px;text-align:center;margin-bottom:24px;position:relative;overflow:hidden;">
-        <div style="position:relative;">
-          <div style="width:90px;height:90px;border-radius:50%;margin:0 auto 16px;background:linear-gradient(135deg,#d4a017,#f5c842);display:flex;align-items:center;justify-content:center;font-size:2.4rem;border:4px solid rgba(255,255,255,0.2);box-shadow:0 8px 24px rgba(212,160,23,0.5);">${profileData.avatar || '👨‍🍳'}</div>
-          <h2 style="color:#fff;font-size:1.6rem;margin:0 0 4px;font-weight:800;">${username}</h2>
-          <p style="color:#a8c8a0;font-size:0.88rem;margin:0 0 4px;">${handle}</p>
-          ${memberSince ? `<p style="color:#7aab72;font-size:0.75rem;margin:0 0 6px;">${memberSince}</p>` : ''}
-          <p style="color:#c8e0c0;font-size:0.85rem;margin:0 0 10px;">${profileData.bio || 'Community cook sharing favorite dishes and kitchen wins.'}</p>
-          ${followBtn}
-          <div style="display:flex;justify-content:center;align-items:center;margin-top:24px;">
-            <div style="text-align:center;padding:0 28px;">
-              <div style="color:#fff;font-size:1.4rem;font-weight:800;">${profileData.followers || 0}</div>
-              <div style="color:#a8c8a0;font-size:0.75rem;margin-top:2px;">${T.prof_followers}</div>
-            </div>
-            <div style="width:1px;height:36px;background:rgba(255,255,255,0.2);"></div>
-            <div style="text-align:center;padding:0 28px;">
-              <div style="color:#fff;font-size:1.4rem;font-weight:800;">${profileData.following || 0}</div>
-              <div style="color:#a8c8a0;font-size:0.75rem;margin-top:2px;">${T.prof_following}</div>
-            </div>
-            <div style="width:1px;height:36px;background:rgba(255,255,255,0.2);"></div>
-            <div style="text-align:center;padding:0 28px;">
-              <div style="color:#fff;font-size:1.4rem;font-weight:800;">${viewedPosts.length}</div>
-              <div style="color:#a8c8a0;font-size:0.75rem;margin-top:2px;">Posts</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div style="margin-bottom:24px;">
-        <h3 style="font-size:1rem;font-weight:700;margin:0 0 16px;">Community Posts</h3>
-        <div>${postsHtml}</div>
-      </div>
-      <button class="btn-outline" style="margin-top:8px;margin-bottom:32px;" onclick="activeProfileUsername = null; renderProfile();">Back to My Profile</button>
-    `;
-    return;
-  }
+  const username = u.name || 'Guest Chef';
+  const handle   = u.email ? u.email : '@' + username.toLowerCase().replaceAll(/\s+/g, '_') + '_cooks';
+  const memberSince = u.joined ? `Member since ${u.joined}` : '';
 
   // ── Core data ──
   const streak      = Number.parseInt(localStorage.getItem('quiz_streak') || '0', 10);
@@ -2134,7 +1580,7 @@ function renderProfile() {
 
   // ── Stats ──
   const challengesDone = heatmapDays.length;
-  const postsMade      = JSON.parse(localStorage.getItem('community_user_posts') || '[]').length;
+  const postsMade      = userPosts.length;
 
   // ── Saved Recipes ──
   const savedGrid = getAllRecipes().filter(r => savedRecipes.includes(r.id)).map(r =>
@@ -2162,12 +1608,12 @@ function renderProfile() {
         <p style="color:#c8e0c0;font-size:0.85rem;margin:0 0 26px;">${T.prof_bio}</p>
         <div style="display:flex;justify-content:center;align-items:center;">
           <div style="text-align:center;padding:0 28px;">
-            <div style="color:#fff;font-size:1.4rem;font-weight:800;">${profileData.followers || 0}</div>
+            <div style="color:#fff;font-size:1.4rem;font-weight:800;">31</div>
             <div style="color:#a8c8a0;font-size:0.75rem;margin-top:2px;">${T.prof_followers}</div>
           </div>
           <div style="width:1px;height:36px;background:rgba(255,255,255,0.2);"></div>
           <div style="text-align:center;padding:0 28px;">
-            <div style="color:#fff;font-size:1.4rem;font-weight:800;">${profileData.following || 0}</div>
+            <div style="color:#fff;font-size:1.4rem;font-weight:800;">84</div>
             <div style="color:#a8c8a0;font-size:0.75rem;margin-top:2px;">${T.prof_following}</div>
           </div>
           <div style="width:1px;height:36px;background:rgba(255,255,255,0.2);"></div>
@@ -2321,6 +1767,7 @@ function logout() {
 function openAddRecipeModal()  { document.getElementById('addRecipeModal').classList.add('open'); }
 function closeAddRecipeModal() { closeModal('addRecipeModal'); }
 
+document.getElementById('addRecipeForm')?.addEventListener('submit', saveCustomRecipe);
 function saveCustomRecipe(e) {
   e.preventDefault();
   const name    = document.getElementById('arName').value.trim();
@@ -2365,143 +1812,6 @@ document.addEventListener('click', e => {
 });
 
 // ────────────────────────────────────────────────
-// NOTIFICATIONS
-// ────────────────────────────────────────────────
-function generateNotifications() {
-  let notifs = JSON.parse(localStorage.getItem('cooks_notifications') || '[]');
-  const todayStr = new Date().toDateString();
-  const lastPlayed = localStorage.getItem('challenge_played_date');
-  const streak = parseInt(localStorage.getItem('quiz_streak') || '0');
-  const plan = JSON.parse(localStorage.getItem('cooks_meal_plan') || '{}');
-
-  if (lastPlayed !== todayStr) {
-    const exists = notifs.find(n => n.type === 'challenge_reminder' && n.date === todayStr);
-    if (!exists) {
-      notifs.unshift({
-        id: Date.now(),
-        type: 'challenge_reminder',
-        date: todayStr,
-        icon: '🏆',
-        text: streak > 0
-          ? "Don't lose your " + streak + " day streak! Complete today's challenge 🔥"
-          : "A new challenge is waiting for you today! 🏆",
-        read: false,
-        time: 'Today'
-      });
-    }
-  }
-
-  const milestones = [
-    { streak: 3,  emoji: '🫕', text: "Amazing! You hit a 3 day streak and unlocked 🫕 reaction!" },
-    { streak: 7,  emoji: '🧆', text: "Incredible! 7 day streak achieved! You unlocked 🧆 reaction!" },
-    { streak: 14, emoji: '🥙', text: "Legendary! 14 day streak! You unlocked 🥙 reaction!" }
-  ];
-  milestones.forEach(m => {
-    if (streak >= m.streak) {
-      const exists = notifs.find(n => n.type === 'milestone_' + m.streak);
-      if (!exists) {
-        notifs.unshift({
-          id: Date.now() + m.streak,
-          type: 'milestone_' + m.streak,
-          date: todayStr,
-          icon: m.emoji,
-          text: m.text,
-          read: false,
-          time: 'Achievement'
-        });
-      }
-    }
-  });
-
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().split('T')[0];
-  if (plan[tomorrowStr]) {
-    const plannedRecipe = getAllRecipes().find(r => r.id === plan[tomorrowStr]);
-    if (plannedRecipe) {
-      const exists = notifs.find(n => n.type === 'planner_' + tomorrowStr);
-      if (!exists) {
-        notifs.unshift({
-          id: Date.now() + 999,
-          type: 'planner_' + tomorrowStr,
-          date: todayStr,
-          icon: '🛒',
-          text: "Tomorrow you're cooking " + plannedRecipe.name + "! Check your fridge for ingredients 🛒",
-          read: false,
-          time: 'Tomorrow'
-        });
-      }
-    }
-  }
-
-  notifs = notifs.slice(0, 20);
-  localStorage.setItem('cooks_notifications', JSON.stringify(notifs));
-  return notifs;
-}
-
-function renderNotifBadge() {
-  const notifs = JSON.parse(localStorage.getItem('cooks_notifications') || '[]');
-  const unread = notifs.filter(n => !n.read).length;
-  const badge  = document.getElementById('notifBadge');
-  if (!badge) return;
-  if (unread > 0) {
-    badge.style.display = 'flex';
-    badge.textContent   = unread > 9 ? '9+' : unread;
-  } else {
-    badge.style.display = 'none';
-  }
-}
-
-function toggleNotifPanel() {
-  const panel = document.getElementById('notifPanel');
-  if (!panel) return;
-  const isOpen = panel.style.display !== 'none';
-  if (isOpen) {
-    panel.style.display = 'none';
-  } else {
-    panel.style.display = 'block';
-    renderNotifList();
-  }
-}
-
-function renderNotifList() {
-  const notifs = generateNotifications();
-  renderNotifBadge();
-  const list = document.getElementById('notifList');
-  if (!list) return;
-  if (!notifs.length) {
-    list.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem; padding:20px 0;">No notifications yet</p>';
-    return;
-  }
-  list.innerHTML = notifs.map(n => `
-    <div style="display:flex; gap:12px; align-items:flex-start; padding:12px 0; border-bottom:1px solid var(--border); opacity:${n.read ? '0.5' : '1'};">
-      <div style="font-size:1.4rem; min-width:32px; text-align:center;">${n.icon}</div>
-      <div style="flex:1;">
-        <p style="font-size:0.82rem; line-height:1.5; margin:0 0 4px 0; color:var(--text);">${n.text}</p>
-        <span style="font-size:0.72rem; color:var(--muted);">${n.time}</span>
-      </div>
-      ${!n.read ? '<div style="width:8px; height:8px; background:var(--gold); border-radius:50%; margin-top:4px; flex-shrink:0;"></div>' : ''}
-    </div>`).join('');
-}
-
-function markAllNotifsRead() {
-  let notifs = JSON.parse(localStorage.getItem('cooks_notifications') || '[]');
-  notifs = notifs.map(n => ({ ...n, read: true }));
-  localStorage.setItem('cooks_notifications', JSON.stringify(notifs));
-  renderNotifList();
-  renderNotifBadge();
-}
-
-// Close panel when clicking outside
-document.addEventListener('click', function(e) {
-  const panel = document.getElementById('notifPanel');
-  const btn   = document.getElementById('notifBtn');
-  if (panel && btn && !panel.contains(e.target) && !btn.contains(e.target)) {
-    panel.style.display = 'none';
-  }
-});
-
-// ────────────────────────────────────────────────
 // TOAST
 // ────────────────────────────────────────────────
 function showToast(msg) {
@@ -2510,5 +1820,3 @@ function showToast(msg) {
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3200);
 }
-
-

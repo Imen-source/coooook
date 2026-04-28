@@ -2316,57 +2316,6 @@ body[dir="rtl"] .m-body {
   direction: rtl;
 }
 
-/* ── FRIDGE FORM STYLES ── */
-.fridge-category-selector {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.fridge-category-selector .cat-pill {
-  padding: 8px 14px;
-  background: #f0f0f0;
-  border: 2px solid transparent;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 600;
-  transition: all 0.2s ease;
-  flex: 0 1 auto;
-}
-
-.fridge-category-selector .cat-pill:hover {
-  background: #e8e8e8;
-}
-
-.fridge-category-selector .cat-pill.active {
-  background: var(--gold);
-  color: white;
-  border-color: var(--gold);
-}
-
-.fridge-suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.suggestion-chip {
-  padding: 6px 10px;
-  background: #f0f0f0;
-  border: 1px solid #ddd;
-  border-radius: 16px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  transition: all 0.2s ease;
-}
-
-.suggestion-chip:hover {
-  background: #e8e8e8;
-  border-color: var(--gold);
-}
-
 /* ── RESPONSIVE ── */
 @media (max-width: 1200px) {
   .dash-grid {
